@@ -65,6 +65,31 @@ async function audio16k(blob) {
     return mono;
   } finally { ac.close(); }
 }
+// alguns formatos são lidos só em parte pelo navegador; nesse caso, relê bloco a bloco
+async function audioCompleto(blob) {
+  let audio;
+  try { audio = await audio16k(blob); } catch {}
+  try {
+    const { Input, BlobSource, ALL_FORMATS, AudioBufferSink } = await import('./vendor/mediabunny.min.mjs');
+    const input = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS });
+    const trilha = await input.getPrimaryAudioTrack();
+    const dur = await trilha.computeDuration();
+    if (audio && audio.length / 16000 >= dur - 1.5) return audio;
+    const mono = new Float32Array(Math.ceil(dur * 16000));
+    for await (const { buffer: b, timestamp } of new AudioBufferSink(trilha).buffers()) {
+      const canais = Array.from({ length: b.numberOfChannels }, (_, c) => b.getChannelData(c));
+      const ini = Math.round(timestamp * 16000), n = Math.floor(b.duration * 16000);
+      for (let i = 0; i < n; i++) {
+        const k = ini + i, j = Math.floor(i * b.sampleRate / 16000);
+        if (k >= 0 && k < mono.length) mono[k] = canais.reduce((s, d) => s + d[j], 0) / canais.length;
+      }
+    }
+    return mono;
+  } catch (e) {
+    if (audio) return audio;
+    throw e;
+  }
+}
 // divide trechos longos em legendas curtas; o tempo é repartido pelo número de letras
 function dividir(chunks, total) {
   const out = [];
@@ -100,23 +125,25 @@ $('gerar').onclick = async () => {
   const alvo = proj, minha = ++rodada, vale = () => rodada === minha;
   $('gerar').disabled = true; $('cancelarIA').hidden = false; $('status').textContent = 'Lendo o áudio…';
   pedirAviso(); manterVivo(true);
-  const concluir = (chunks, total) => {
+  const concluir = (chunks, total, faltam = []) => {
     segs = dividir(chunks, total); montar(); guardar();
-    const msg = segs.length ? `${segs.length} legendas criadas. Revise o texto.` : 'Nenhuma fala encontrada.';
+    const mm = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+    let msg = segs.length ? `${segs.length} legendas criadas, até ${mm(segs.at(-1).fim)} de ${mm(total)} de áudio. Revise o texto.` : 'Nenhuma fala encontrada.';
+    if (faltam.length) msg += ' Confira estes trechos sem legenda: ' + faltam.map(([a, b]) => `${mm(a)}–${mm(b)}`).join(', ') + '.';
     encerrarIA(msg); avisar(msg);
   };
   const falhar = msg => { encerrarIA(msg); avisar(msg); };
   let audio;
-  try { audio = await audio16k(alvo.blob); }
+  try { audio = await audioCompleto(alvo.blob); }
   catch { if (vale()) falhar('Não consegui ler o áudio deste vídeo.'); return; }
   if (!vale()) return;
   const total = audio.length / 16000;
   if (online) {
     abortar = new AbortController();
     try {
-      const chunks = await transcreverOnline(audio, chave, abortar.signal,
-        (i, n) => $('status').textContent = `Transcrevendo online (parte ${i} de ${n})… Pode usar outros aplicativos.`);
-      if (vale()) concluir(chunks, total);
+      const r = await transcreverOnline(audio, chave, abortar.signal,
+        texto => $('status').textContent = texto + ' Pode usar outros aplicativos.');
+      if (vale()) concluir(r.chunks, total, r.faltam);
     } catch (e) { if (vale()) falhar('Não deu certo: ' + e.message); }
     return;
   }
