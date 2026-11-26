@@ -19,9 +19,16 @@ async function db(mode, fn) {
 }
 
 /* ---------- telas ---------- */
+// ícones desenhados no index.html
+function icone(nome) {
+  const ns = 'http://www.w3.org/2000/svg', s = document.createElementNS(ns, 'svg'), u = document.createElementNS(ns, 'use');
+  s.setAttribute('class', 'i'); s.setAttribute('aria-hidden', 'true'); u.setAttribute('href', '#i-' + nome); s.append(u);
+  return s;
+}
 function go(id) {
   document.querySelectorAll('main section').forEach(s => s.hidden = s.id !== id);
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.go === id));
+  scrollTo(0, 0);
   if (id !== 'editor') $('lvideo')?.pause();
   if (id !== 'pronto') $('pvideo').pause();
   if (id !== 'corte') $('cvideo').pause();
@@ -196,7 +203,11 @@ function baixar(i) {
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
   informar(`✅ Vídeo ${i.origem ? 'COM LEGENDAS ' : ''}baixado: ${nome(i)}\nVeja na Galeria → Álbuns → Download. (Toque para fechar)`);
 }
-function informar(texto) { $('aviso').textContent = texto; $('aviso').hidden = false; }
+let avisoId;
+function informar(texto) {
+  $('aviso').textContent = texto; $('aviso').hidden = false;
+  clearTimeout(avisoId); avisoId = setTimeout(() => $('aviso').hidden = true, 8000); // some sozinho para não cobrir botões
+}
 $('aviso').onclick = () => $('aviso').hidden = true;
 function compartilhar(i) {
   const file = new File([i.blob], nome(i), { type: i.blob.type.split(';')[0] || 'video/mp4' });
@@ -207,39 +218,42 @@ let urls = [];
 async function listar() {
   const itens = (await db('readonly', s => s.getAll())).reverse();
   urls.forEach(URL.revokeObjectURL); urls = [];
-  $('list').replaceChildren(...(itens.length ? itens.map(card) : [Object.assign(document.createElement('p'), { textContent: 'Nenhum vídeo ainda. Grave o primeiro na aba Criar.' })]));
+  $('list').replaceChildren(...(itens.length ? itens.map(card) : [semVideos()]));
+}
+function semVideos() {
+  const el = Object.assign(document.createElement('div'), { className: 'cartao vazio' });
+  const p = Object.assign(document.createElement('p'), { textContent: 'Nenhum vídeo ainda. Grave o primeiro ou escolha um da galeria na tela Criar.' });
+  const b = Object.assign(document.createElement('button'), { className: 'primary', textContent: 'Ir para Criar', onclick: () => go('criar') });
+  el.append(p, b); return el;
 }
 function card(i) {
   const el = document.createElement('div'); el.className = 'item';
-  const h = document.createElement('b');
-  h.textContent = i.titulo + ' · ' + new Date(i.id).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+  const h = Object.assign(document.createElement('h2'), { textContent: i.titulo });
+  const quando = Object.assign(document.createElement('p'), { className: 'nota', textContent: new Date(i.id).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) });
   const v = document.createElement('video'); v.controls = true; v.playsInline = true; v.preload = 'metadata';
   v.src = URL.createObjectURL(i.blob); urls.push(v.src);
-  const legendar = document.createElement('button');
-  legendar.textContent = 'Legendas'; legendar.className = 'largo'; legendar.onclick = () => editar(i);
-  const tesoura = document.createElement('button');
-  tesoura.textContent = '✂️ Cortar'; tesoura.className = 'largo'; tesoura.onclick = () => cortar(i);
+  const acao = (nome, texto, f) => { const b = document.createElement('button'); b.append(icone(nome), texto); b.onclick = f; return b; };
   const acoes = Object.assign(document.createElement('div'), { className: 'row' });
-  acoes.append(legendar, tesoura);
-  el.append(h, v, menu(i, listar), acoes);
+  acoes.append(acao('legenda', 'Legendas', () => editar(i)), acao('tesoura', 'Cortar', () => cortar(i)));
+  el.append(v, h, quando, acoes, menu(i, listar));
   if (i.segs?.length) el.append(Object.assign(document.createElement('p'), { className: 'nota', textContent: 'Salvar e Compartilhar incluem as legendas.' }));
   return el;
 }
 // menu de ações de um vídeo: salvar, compartilhar e deletar
 function menu(i, aoDeletar) {
   const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'group'); m.setAttribute('aria-label', 'Ações do vídeo');
-  const btn = (icone, t, f) => {
+  const btn = (nome, t, f) => {
     const b = document.createElement('button');
-    b.append(Object.assign(document.createElement('span'), { textContent: icone, ariaHidden: 'true' }), t);
-    b.onclick = f; m.append(b);
+    b.append(icone(nome), t); b.onclick = f; m.append(b);
+    return b;
   };
   // com legendas no projeto, o vídeo é primeiro gerado com elas
-  btn('💾', 'Salvar', () => temLegendas(i) ? comLegendas(i, 'salvar') : baixar(i));
-  btn('📤', 'Compartilhar', () => temLegendas(i) ? comLegendas(i, 'compartilhar') : compartilhar(i));
-  btn('🗑️', 'Deletar', async () => {
+  btn('salvar', 'Salvar', () => temLegendas(i) ? comLegendas(i, 'salvar') : baixar(i));
+  btn('enviar', 'Compartilhar', () => temLegendas(i) ? comLegendas(i, 'compartilhar') : compartilhar(i));
+  btn('lixo', 'Deletar', async () => {
     if (!confirm('Deletar este vídeo do app? Não dá para desfazer.')) return;
     await db('readwrite', s => s.delete(i.id)); aoDeletar();
-  });
+  }).className = 'perigo';
   return m;
 }
 $('atualizar').onclick = async () => {

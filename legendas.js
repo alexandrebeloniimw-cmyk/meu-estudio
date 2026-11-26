@@ -242,7 +242,7 @@ async function comLegendas(item, acao) {
 }
 function mostrarPronto(item, acao) {
   go('pronto');
-  $('ptitulo').textContent = 'Vídeo com legendas pronto ✅';
+  $('ptitulo').textContent = 'Vídeo com legendas pronto';
   $('pinfo').textContent = item.info || '';
   URL.revokeObjectURL($('pvideo').src); $('pvideo').src = URL.createObjectURL(item.blob);
   $('psalvar').onclick = () => baixar(item);

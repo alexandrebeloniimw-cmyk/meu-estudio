@@ -71,7 +71,7 @@
   /* ---------- desenho da linha do tempo e prévia ---------- */
   function pintar() {
     const W = linha.width, H = linha.height;
-    ctx.fillStyle = '#152127'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#12275a'; ctx.fillRect(0, 0, W, H);
     if (!dur) return;
     const x = t => t / dur * W;
     tiras.forEach((c, i) => {
@@ -79,15 +79,15 @@
       const lw = W / 8, k = Math.max(lw / c.width, 96 / c.height), cw = lw / k, ch = 96 / k;
       ctx.drawImage(c, (c.width - cw) / 2, (c.height - ch) / 2, cw, ch, i * lw, 0, lw, 96);
     });
-    if (ondas) { ctx.fillStyle = '#2dd4bf'; ondas.forEach((m, i) => { const h = Math.max(2, m * 60); ctx.fillRect(i / 300 * W, 130 - h / 2, W / 300 - .5, h); }); }
+    if (ondas) { ctx.fillStyle = '#9dbbff'; ondas.forEach((m, i) => { const h = Math.max(2, m * 60); ctx.fillRect(i / 300 * W, 130 - h / 2, W / 300 - .5, h); }); }
     for (const p of partes) {
       if (p.fora) {
-        ctx.fillStyle = 'rgba(140,20,20,.8)'; ctx.fillRect(x(p.a), 0, x(p.b) - x(p.a), H);
+        ctx.fillStyle = 'rgba(190,30,50,.78)'; ctx.fillRect(x(p.a), 0, x(p.b) - x(p.a), H);
       }
       if (p.a > 0) { ctx.fillStyle = '#fff'; ctx.fillRect(x(p.a) - 1.5, 0, 3, H); }
     }
     const s = atual();
-    ctx.strokeStyle = '#ffe600'; ctx.lineWidth = 6; ctx.strokeRect(x(s.a) + 3, 3, Math.max(0, x(s.b) - x(s.a) - 6), H - 6);
+    ctx.strokeStyle = '#ffc233'; ctx.lineWidth = 6; ctx.strokeRect(x(s.a) + 3, 3, Math.max(0, x(s.b) - x(s.a) - 6), H - 6);
     const px = x(Math.min(vid.currentTime, dur));
     ctx.fillStyle = '#ef4444'; ctx.fillRect(px - 3, 0, 6, H);
   }
@@ -108,9 +108,10 @@
       if (texto !== textoAntes) $('ctempo').textContent = textoAntes = texto;
       const trecho = `Trecho marcado: ${tempo(s.a)} a ${tempo(s.b)}${s.fora ? ' (apagado)' : ''}`;
       if ($('ctrecho').textContent !== trecho) $('ctrecho').textContent = trecho;
-      $('capagar').lastChild.textContent = s.fora ? 'Restaurar' : 'Apagar trecho';
-      $('capagar').firstChild.textContent = s.fora ? '♻️' : '🗑️';
-      $('cplay').textContent = vid.paused ? '▶' : '⏸';
+      $('capagar').querySelector('span').textContent = s.fora ? 'Restaurar' : 'Apagar trecho';
+      $('capagar').classList.toggle('perigo', !s.fora);
+      $('capagar').querySelector('use').setAttribute('href', s.fora ? '#i-restaurar' : '#i-lixo');
+      $('cplay').querySelector('use').setAttribute('href', vid.paused ? '#i-tocar' : '#i-pausar');
     }
     requestAnimationFrame(quadro);
   })();
@@ -201,7 +202,7 @@
         dividir(a); dividir(b);
         partes.forEach(p => { const meio = (p.a + p.b) / 2; if (meio > a && meio < b) p.fora = true; });
       }
-    }, `${lista.length} silêncio(s) apagado(s). Toque em ▶ para conferir; Desfazer volta atrás.`);
+    }, `${lista.length} silêncio(s) apagado(s). Toque em tocar para conferir; Desfazer volta atrás.`);
   };
 
   /* ---------- gerar o vídeo ---------- */
@@ -250,7 +251,7 @@
   }
   function mostrarCorte(novo) {
     go('pronto');
-    $('ptitulo').textContent = 'Vídeo cortado pronto ✅';
+    $('ptitulo').textContent = 'Vídeo cortado pronto';
     $('pinfo').textContent = `${novo.info} · ${tempo(novo.ms / 1000)}` + (novo.segs ? ' · As legendas entram ao salvar ou compartilhar.' : '');
     URL.revokeObjectURL($('pvideo').src); $('pvideo').src = URL.createObjectURL(novo.blob);
     $('psalvar').onclick = () => novo.segs ? comLegendas(novo, 'salvar') : baixar(novo);
