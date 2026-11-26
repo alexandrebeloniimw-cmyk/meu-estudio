@@ -106,6 +106,26 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--marinho);vertical
 #linha{display:block;width:100%;border-radius:12px;touch-action:none;margin:8px 0}
 .passos{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}.passos button{padding:0;font-size:15px;font-variant-numeric:tabular-nums}
 
+/* editor */
+.previa{position:sticky;top:0;z-index:4;background:var(--fundo);padding:6px 0 8px;margin-top:-6px}
+#etela{display:block;width:100%;max-height:34vh;object-fit:contain;margin:0 auto;border-radius:14px;background:#0a1330}
+.player{display:flex;align-items:center;gap:10px;margin-top:8px}.player button{width:48px;padding:0;flex:none}.player input{flex:1}
+#etempo{font-size:13px;color:var(--mu);font-variant-numeric:tabular-nums;white-space:nowrap}
+#eclipes{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px}
+.clipe{flex:none;width:76px;height:76px;padding:0;border:3px solid transparent;background:var(--nevoa) center/cover;align-items:flex-end;position:relative;overflow:hidden}
+.clipe[aria-pressed=true]{border-color:var(--azul);box-shadow:0 0 0 2px var(--azul)}
+.clipe span{width:100%;background:rgba(10,19,48,.75);color:#fff;font-size:11px;padding:2px 0}
+.clipe.mais{flex-direction:column;align-items:center;gap:2px;font-size:12px;border:2px dashed var(--azul);background:var(--branco)}
+#estatus{color:var(--azul);font-weight:600;font-size:14px;margin-bottom:8px}#estatus:empty{display:none}
+.abas{display:flex;gap:4px;padding:4px;margin-bottom:12px;border-radius:14px;background:var(--nevoa)}
+.abas button{flex:1;min-height:42px;padding:0 2px;font-size:14px;background:none;color:var(--mu);border-radius:11px}
+.abas button[aria-selected=true]{background:var(--marinho);color:#fff}
+#enome{overflow-wrap:anywhere}
+.cartao .texto,.numero{display:block;width:100%;min-height:48px;padding:10px 12px;margin-top:6px;font-weight:400}
+output{float:right;font-weight:400}
+.largo.perigo,button.perigo{color:var(--rec);background:#fdecee}
+.lista button.destaque{border:2px solid var(--azul)}
+
 /* vídeo pronto */
 #pvideo{display:block;width:100%;max-height:50vh;background:#0a1330;border-radius:16px;margin-bottom:12px}
 #pinfo{margin-bottom:16px}
@@ -142,10 +162,10 @@ nav button.on{color:var(--marinho)}nav button.on .i{background:var(--nevoa)}
 </style>
 </head>
 <body>
-<svg xmlns="http://www.w3.org/2000/svg" hidden><symbol id="i-inicio" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/></symbol><symbol id="i-pasta" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></symbol><symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10l5-3v10l-5-3"/></symbol><symbol id="i-legenda" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 11h4M14 11h3M7 15h7"/></symbol><symbol id="i-tesoura" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8 7.5L20 17M8 16.5L20 7"/></symbol><symbol id="i-salvar" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></symbol><symbol id="i-enviar" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/></symbol><symbol id="i-lixo" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 001 1h8a1 1 0 001-1l1-12M9 7V4h6v3"/></symbol><symbol id="i-voltar" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol><symbol id="i-seta" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol><symbol id="i-tocar" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol><symbol id="i-pausar" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol><symbol id="i-inicio-aqui" viewBox="0 0 24 24"><path d="M5 5v14M20 12H9M13 8l-4 4 4 4"/></symbol><symbol id="i-fim-aqui" viewBox="0 0 24 24"><path d="M19 5v14M4 12h11M11 8l4 4-4 4"/></symbol><symbol id="i-desfazer" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5M4 12h10a6 6 0 016 6"/></symbol><symbol id="i-recomecar" viewBox="0 0 24 24"><path d="M5 12a7 7 0 107-7H7M10 2L7 5l3 3"/></symbol><symbol id="i-restaurar" viewBox="0 0 24 24"><path d="M5 12a7 7 0 107-7H7M10 2L7 5l3 3M9 12l2 2 4-4"/></symbol><symbol id="i-silencio" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 9l5 6M22 9l-5 6"/></symbol><symbol id="i-magica" viewBox="0 0 24 24"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2zM19 17v4M17 19h4"/></symbol><symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-virar" viewBox="0 0 24 24"><path d="M4 8a9 9 0 0115-2l1 2M20 4v4h-4M20 16a9 9 0 01-15 2l-1-2M4 20v-4h4"/></symbol></svg>
+<svg xmlns="http://www.w3.org/2000/svg" hidden><symbol id="i-editor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M3 15h18M9 4v5M15 15v5"/></symbol><symbol id="i-microfone" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></symbol><symbol id="i-inicio" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/></symbol><symbol id="i-pasta" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></symbol><symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10l5-3v10l-5-3"/></symbol><symbol id="i-legenda" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 11h4M14 11h3M7 15h7"/></symbol><symbol id="i-tesoura" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8 7.5L20 17M8 16.5L20 7"/></symbol><symbol id="i-salvar" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></symbol><symbol id="i-enviar" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/></symbol><symbol id="i-lixo" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 001 1h8a1 1 0 001-1l1-12M9 7V4h6v3"/></symbol><symbol id="i-voltar" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol><symbol id="i-seta" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol><symbol id="i-tocar" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol><symbol id="i-pausar" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol><symbol id="i-inicio-aqui" viewBox="0 0 24 24"><path d="M5 5v14M20 12H9M13 8l-4 4 4 4"/></symbol><symbol id="i-fim-aqui" viewBox="0 0 24 24"><path d="M19 5v14M4 12h11M11 8l4 4-4 4"/></symbol><symbol id="i-desfazer" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5M4 12h10a6 6 0 016 6"/></symbol><symbol id="i-recomecar" viewBox="0 0 24 24"><path d="M5 12a7 7 0 107-7H7M10 2L7 5l3 3"/></symbol><symbol id="i-restaurar" viewBox="0 0 24 24"><path d="M5 12a7 7 0 107-7H7M10 2L7 5l3 3M9 12l2 2 4-4"/></symbol><symbol id="i-silencio" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 9l5 6M22 9l-5 6"/></symbol><symbol id="i-magica" viewBox="0 0 24 24"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2zM19 17v4M17 19h4"/></symbol><symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-virar" viewBox="0 0 24 24"><path d="M4 8a9 9 0 0115-2l1 2M20 4v4h-4M20 16a9 9 0 01-15 2l-1-2M4 20v-4h4"/></symbol></svg>
 <main>
 <section id="criar">
-  <header><img class="marca" src="icon-192.png" alt=""><h1>Meu Estúdio</h1><span class="versao">versão 11</span></header>
+  <header><img class="marca" src="icon-192.png" alt=""><h1>Meu Estúdio</h1><span class="versao">versão 12</span></header>
   <div class="palco-inicio">
     <div class="visor" aria-hidden="true"><div class="quadro"><b></b><i></i><i></i><i></i></div></div>
     <div class="seletor" role="group" aria-label="Formato do vídeo"><button data-formato="v"><span class="q"></span>Vertical</button><button data-formato="h"><span class="q h"></span>Horizontal</button></div>
@@ -153,6 +173,7 @@ nav button.on{color:var(--marinho)}nav button.on .i{background:var(--nevoa)}
   </div>
   <h2>Outras ferramentas</h2>
   <div class="lista">
+    <button id="abrirEditor" class="destaque"><span class="selo"><svg class="i" aria-hidden="true"><use href="#i-editor"/></svg></span><span>Editor de vídeo<small>Juntar, música, textos e filtros</small></span><svg class="i" aria-hidden="true"><use href="#i-seta"/></svg></button>
     <button id="soGravar"><span class="selo"><svg class="i" aria-hidden="true"><use href="#i-camera"/></svg></span><span>Gravar sem texto<small>Abre direto a câmera</small></span><svg class="i" aria-hidden="true"><use href="#i-seta"/></svg></button>
     <button id="importar"><span class="selo"><svg class="i" aria-hidden="true"><use href="#i-legenda"/></svg></span><span>Criar legendas<small>Escolha um vídeo da galeria</small></span><svg class="i" aria-hidden="true"><use href="#i-seta"/></svg></button>
     <button id="importarCorte"><span class="selo"><svg class="i" aria-hidden="true"><use href="#i-tesoura"/></svg></span><span>Cortar vídeo<small>Aparar, dividir e tirar silêncios</small></span><svg class="i" aria-hidden="true"><use href="#i-seta"/></svg></button>
@@ -228,6 +249,53 @@ nav button.on{color:var(--marinho)}nav button.on .i{background:var(--nevoa)}
   <button class="primary big" id="cgerar">Gerar vídeo cortado</button>
   <button class="largo contorno" id="ctrechoSo">Gerar só o trecho marcado</button>
 </section>
+<section id="montar" hidden>
+  <header><button class="voltar" data-go="criar" aria-label="Voltar"><svg class="i" aria-hidden="true"><use href="#i-voltar"/></svg></button><div><h1>Editor</h1></div><button id="enovo" class="contorno" style="margin-left:auto">Novo</button></header>
+  <div class="previa">
+    <canvas id="etela" width="540" height="960" aria-label="Prévia do vídeo" role="img"></canvas>
+    <div class="player"><button id="etocar" class="primary" aria-label="Tocar ou pausar"><svg class="i" aria-hidden="true"><use href="#i-tocar"/></svg></button><input type="range" id="eposicao" min="0" max="1" step="0.05" value="0" aria-label="Posição no vídeo"><span id="etempo"></span></div>
+  </div>
+  <div id="eclipes" aria-label="Clipes da montagem"></div>
+  <select id="eprojetos" aria-label="Adicionar um vídeo dos Projetos" style="margin:0 0 10px"></select>
+  <p id="estatus" role="status"></p>
+  <div class="abas" role="tablist">
+    <button role="tab" data-aba="clipe" aria-selected="true">Clipe</button><button role="tab" data-aba="texto" aria-selected="false">Textos</button><button role="tab" data-aba="audio" aria-selected="false">Áudio</button><button role="tab" data-aba="logo" aria-selected="false">Logo</button><button role="tab" data-aba="final" aria-selected="false">Gerar</button>
+  </div>
+  <div data-painel="clipe">
+    <div id="esemclipe" class="cartao vazio"><p>Toque em Adicionar para escolher vídeos e fotos da galeria.</p></div>
+    <div id="eclipe">
+      <div class="cartao">
+        <h2 id="enome"></h2>
+        <div class="menu">
+          <button id="eantes"><svg class="i" aria-hidden="true"><use href="#i-voltar"/></svg>Mover antes</button><button id="edividir"><svg class="i" aria-hidden="true"><use href="#i-tesoura"/></svg>Dividir</button><button id="edepois"><svg class="i" aria-hidden="true"><use href="#i-seta"/></svg>Mover depois</button>
+          <button id="eduplicar"><svg class="i" aria-hidden="true"><use href="#i-mais"/></svg>Duplicar</button><button id="egirar"><svg class="i" aria-hidden="true"><use href="#i-recomecar"/></svg>Girar</button><button id="eremover" class="perigo"><svg class="i" aria-hidden="true"><use href="#i-lixo"/></svg>Remover</button>
+        </div>
+      </div>
+      <div class="cartao" id="evideo"><h2>Aparar</h2><label>Começa em <output id="v-ini"></output><input type="range" id="c-ini" min="0" max="1" step="0.1"></label><label>Termina em <output id="v-fim"></output><input type="range" id="c-fim" min="0" max="1" step="0.1"></label></div>
+      <div class="cartao" id="efoto"><h2>Foto</h2><label>Tempo na tela <output id="v-dur"></output><input type="range" id="c-dur" min="1" max="15" step="0.5"></label><label><input type="checkbox" id="c-movimento">Movimento de aproximação</label></div>
+      <div class="cartao" id="esom"><h2>Velocidade e som</h2><label>Velocidade<select id="c-vel"><option value="0.5">0,5× (câmera lenta)</option><option value="0.75">0,75×</option><option value="1">Normal</option><option value="1.25">1,25×</option><option value="1.5">1,5×</option><option value="2">2× (acelerado)</option></select></label><label>Volume do clipe <output id="v-volume"></output><input type="range" id="c-volume" min="0" max="200" step="5"></label></div>
+      <div class="cartao"><h2>Imagem</h2>
+        <div class="campos"><label>Filtro<select id="c-filtro"><option value="normal">Original</option><option value="vivo">Vivo</option><option value="quente">Quente</option><option value="frio">Frio</option><option value="cinema">Cinema</option><option value="suave">Suave</option><option value="pb">Preto e branco</option><option value="sepia">Sépia</option></select></label><label>Enquadrar<select id="c-encaixe"><option value="preencher">Preencher a tela</option><option value="ajustar">Mostrar inteiro</option></select></label></div>
+        <label>Brilho <output id="v-brilho"></output><input type="range" id="c-brilho" min="50" max="150" step="5"></label><label>Contraste <output id="v-contraste"></output><input type="range" id="c-contraste" min="50" max="150" step="5"></label><label>Saturação <output id="v-saturacao"></output><input type="range" id="c-saturacao" min="0" max="200" step="5"></label>
+        <button id="etodos" class="largo">Aplicar a todos os clipes</button>
+      </div>
+      <div class="cartao"><h2>Transição</h2><label>Como este clipe entra<select id="c-transicao"><option value="nenhuma">Corte seco</option><option value="dissolver">Dissolver</option><option value="deslizar">Deslizar</option><option value="escurecer">Escurecer</option><option value="clarao">Clarão</option></select></label></div>
+    </div>
+  </div>
+  <div data-painel="texto" hidden><button id="enovotexto" class="primary big"><svg class="i" aria-hidden="true"><use href="#i-mais"/></svg>Adicionar texto neste ponto</button><div id="etextos"></div></div>
+  <div data-painel="audio" hidden>
+    <div class="cartao"><h2>Música de fundo</h2><p class="nota" id="emusicanome" style="margin-bottom:10px;overflow-wrap:anywhere"></p><button id="emusica" class="largo">Escolher música do celular</button>
+      <div id="emusicaop" style="margin-top:14px"><label>Volume da música <output id="v-mvolume"></output><input type="range" id="m-volume" min="0" max="100" step="5"></label><label>Começar a música no segundo<input type="number" id="m-inicio" class="numero" min="0" step="1"></label><label><input type="checkbox" id="m-abaixar">Abaixar a música quando houver fala</label><button id="esemmusica" class="largo perigo">Tirar a música</button></div></div>
+    <div class="cartao"><h2>Narração</h2><p class="nota" style="margin-bottom:10px">A gravação começa no ponto atual do vídeo. Use fones para não captar o som.</p><button id="egravar" class="largo"><svg class="i" aria-hidden="true"><use href="#i-microfone"/></svg><span>Gravar narração</span></button>
+      <div id="enarraop" style="margin-top:14px"><label>Volume da narração <output id="v-nvolume"></output><input type="range" id="n-volume" min="0" max="200" step="5"></label><label>Entra no segundo<input type="number" id="n-inicio" class="numero" min="0" step="0.5"></label><button id="esemnarra" class="largo perigo">Tirar a narração</button></div></div>
+  </div>
+  <div data-painel="logo" hidden><div class="cartao"><h2>Logotipo ou marca</h2><button id="elogo" class="largo">Escolher imagem</button><p class="nota" style="margin-top:8px">PNG com fundo transparente fica melhor.</p>
+    <div id="elogoop" style="margin-top:14px"><label>Posição<select id="l-posi"><option value="se">Em cima, à esquerda</option><option value="sd">Em cima, à direita</option><option value="ie">Embaixo, à esquerda</option><option value="id">Embaixo, à direita</option><option value="centro">No centro</option></select></label><label>Tamanho<input type="range" id="l-tam" min="8" max="80" step="1"></label><label>Transparência<input type="range" id="l-opac" min="10" max="100" step="5"></label><button id="esemlogo" class="largo perigo">Tirar o logotipo</button></div></div></div>
+  <div data-painel="final" hidden><div class="cartao"><h2>Gerar o vídeo</h2><label>Formato<select id="e-formato"><option value="v">Vertical (Reels, Status)</option><option value="h">Horizontal (YouTube)</option><option value="q">Quadrado (feed)</option></select></label><label>Qualidade<select id="e-qualidade"><option value="hd">Alta (Full HD)</option><option value="max">Máxima (até 4K, mais lento)</option></select></label><p class="nota" id="eresumo" style="margin-bottom:12px"></p><button id="egerar" class="primary big" style="margin:0">Gerar vídeo</button></div></div>
+  <input type="file" id="earquivo" accept="video/*,image/*" multiple hidden>
+  <input type="file" id="earqmusica" accept="audio/*" hidden>
+  <input type="file" id="earqlogo" accept="image/*" hidden>
+</section>
 <section id="pronto" hidden>
   <header><div><h1 id="ptitulo">Vídeo com legendas pronto</h1></div></header>
   <video id="pvideo" controls playsinline></video>
@@ -290,5 +358,7 @@ nav button.on{color:var(--marinho)}nav button.on .i{background:var(--nevoa)}
 <script src="online.js"></script>
 <script src="legendas.js"></script>
 <script src="corte.js"></script>
+<script src="quadro.js"></script>
+<script src="editor.js"></script>
 </body>
 </html>

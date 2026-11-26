@@ -6,14 +6,19 @@ const store = {
 
 /* ---------- banco de vídeos no aparelho ---------- */
 const dbp = new Promise((ok, no) => {
-  const r = indexedDB.open('meu-estudio', 1);
-  r.onupgradeneeded = () => r.result.createObjectStore('videos', { keyPath: 'id' });
-  r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error);
+  const r = indexedDB.open('meu-estudio', 2);
+  r.onupgradeneeded = () => {
+    // videos = Projetos; montagens e midias = rascunho do editor
+    for (const loja of ['videos', 'montagens', 'midias'])
+      if (!r.result.objectStoreNames.contains(loja)) r.result.createObjectStore(loja, { keyPath: 'id' });
+  };
+  r.onsuccess = () => { r.result.onversionchange = () => r.result.close(); ok(r.result); };
+  r.onerror = () => no(r.error);
 });
-async function db(mode, fn) {
+async function db(mode, fn, loja = 'videos') {
   const d = await dbp;
   return new Promise((ok, no) => {
-    const t = d.transaction('videos', mode), q = fn(t.objectStore('videos'));
+    const t = d.transaction(loja, mode), q = fn(t.objectStore(loja));
     t.oncomplete = () => ok(q.result); t.onerror = t.onabort = () => no(t.error);
   });
 }
@@ -32,6 +37,7 @@ function go(id) {
   if (id !== 'editor') $('lvideo')?.pause();
   if (id !== 'pronto') $('pvideo').pause();
   if (id !== 'corte') $('cvideo').pause();
+  if (id !== 'montar') self.pausarEditor?.();
   if (id === 'projetos') listar();
 }
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
@@ -235,7 +241,8 @@ function card(i) {
   const acao = (nome, texto, f) => { const b = document.createElement('button'); b.append(icone(nome), texto); b.onclick = f; return b; };
   const acoes = Object.assign(document.createElement('div'), { className: 'row' });
   acoes.append(acao('legenda', 'Legendas', () => editar(i)), acao('tesoura', 'Cortar', () => cortar(i)));
-  el.append(v, h, quando, acoes, menu(i, listar));
+  const montar = acao('editor', 'Abrir no editor', () => abrirEditor(i)); montar.className = 'largo'; montar.style.marginBottom = '8px';
+  el.append(v, h, quando, acoes, montar, menu(i, listar));
   if (i.segs?.length) el.append(Object.assign(document.createElement('p'), { className: 'nota', textContent: 'Salvar e Compartilhar incluem as legendas.' }));
   return el;
 }
