@@ -29,6 +29,7 @@ onmessage = async ({ data: { blob, segs, estilo } }) => {
     if (avc) video.codec = 'avc';
     const audio = {};
     if (await canEncodeAudio('aac')) audio.codec = 'aac';
+    await carregarFonte(estilo.fonte);
     const conv = await Conversion.init({ input, output, video, audio, showWarnings: false });
     if (!conv.isValid || conv.discardedTracks.some(d => d.track.type === 'video' || d.track.type === 'audio')) throw new Error('formato não suportado');
     let ultimo = 0, duracao = 0;

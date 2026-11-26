@@ -61,12 +61,15 @@ nav button.on{color:var(--ac);font-weight:700}
 .nota{color:var(--mu);font-size:13px}
 #pvideo{width:100%;max-height:48vh;background:#000;border-radius:12px;margin-bottom:12px}
 #aviso{position:fixed;left:12px;right:12px;bottom:84px;z-index:30;background:#eef6f5;color:#04211d;border-radius:14px;padding:14px;font-weight:600;white-space:pre-line;overflow-wrap:anywhere}
+.seletor{display:flex;gap:8px;margin-bottom:10px}.seletor button{flex:1;background:#22343c}
+.seletor button[aria-pressed=true]{background:var(--ac);color:#04211d;font-weight:700}
 </style>
 </head>
 <body>
 <main>
 <section id="criar">
-  <h1>Meu Estúdio <small style="font-size:13px;color:var(--mu)">versão 8</small></h1>
+  <h1>Meu Estúdio <small style="font-size:13px;color:var(--mu)">versão 9</small></h1>
+  <div class="seletor" role="group" aria-label="Formato do vídeo"><button data-formato="v">▯ Vertical</button><button data-formato="h">▭ Horizontal</button></div>
   <button class="primary big" data-go="roteiro">+ Gravar com teleprompter</button>
   <div class="grid">
     <button id="soGravar">Gravar<small>sem texto</small></button>
@@ -93,7 +96,9 @@ nav button.on{color:var(--ac);font-weight:700}
   <p id="status" role="status"></p>
   <button id="cancelarIA" hidden>Cancelar</button>
   <div class="grid">
-    <label>Cor<select id="cor"><option value="#ffffff">Branca</option><option value="#ffe600">Amarela</option><option value="#2dd4bf">Turquesa</option></select></label>
+    <label>Fonte<select id="fonte"><option value="sistema">Padrão</option><option value="montserrat">Montserrat</option><option value="poppins">Poppins</option><option value="anton">Anton (impacto)</option><option value="bebas">Bebas Neue</option><option value="oswald">Oswald</option><option value="playfair">Playfair (clássica)</option><option value="pacifico">Pacifico (manuscrita)</option><option value="lobster">Lobster</option><option value="bangers">Bangers (quadrinhos)</option></select></label>
+    <label>Animação<select id="anim"><option value="nenhuma">Nenhuma</option><option value="surgir">Surgir</option><option value="zoom">Zoom (pulo)</option><option value="subir">Subir</option><option value="deslizar">Deslizar</option><option value="palavra">Palavra por palavra</option><option value="destaque">Destacar a palavra</option><option value="digitar">Máquina de escrever</option></select></label>
+    <label>Cor<select id="cor"><option value="#ffffff">Branca</option><option value="#ffe600">Amarela</option><option value="#2dd4bf">Turquesa</option><option value="#ff4d6d">Rosa</option><option value="#ff8a00">Laranja</option><option value="#4ade80">Verde</option></select></label>
     <label>Fundo<select id="fundo"><option value="caixa">Caixa escura</option><option value="contorno">Contorno</option></select></label>
     <label>Posição<select id="posi"><option value="baixo">Embaixo</option><option value="meio">No meio</option><option value="alto">Em cima</option></select></label>
     <label>Tamanho<input type="range" id="tam" min="3" max="11" step="0.5" value="6"></label>
@@ -130,13 +135,14 @@ nav button.on{color:var(--ac);font-weight:700}
 <div id="studio" hidden>
   <video id="cam" autoplay muted playsinline></video>
   <div id="prompter"><div id="ptext"></div></div>
-  <div class="top" id="timer">00:00</div>
+  <div class="top"><span id="timer">00:00</span> · <small id="res"></small></div>
   <div id="count"></div>
   <div class="ctrl">
     <div id="sliders">
       <label>Velocidade<input type="range" id="speed" min="10" max="150" value="40"></label>
       <label>Tamanho da letra<input type="range" id="size" min="18" max="56" value="30"></label>
     </div>
+    <div class="seletor" role="group" aria-label="Formato do vídeo"><button data-formato="v">▯ Vertical</button><button data-formato="h">▭ Horizontal</button></div>
     <div class="row">
       <button id="fechar">Voltar</button>
       <button id="virar">Virar</button>

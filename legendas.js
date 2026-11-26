@@ -9,7 +9,7 @@ $('chave').oninput = () => {
 };
 const vid = $('lvideo'), over = $('lover');
 
-for (const id of ['modelo', 'cor', 'tam', 'posi', 'fundo']) {
+for (const id of ['modelo', 'cor', 'tam', 'posi', 'fundo', 'fonte', 'anim']) {
   $(id).value = store.get(id, $(id).value);
   $(id).addEventListener('input', () => store.set(id, $(id).value));
 }
@@ -47,10 +47,23 @@ function tamanho(v) {
 }
 
 /* ---------- desenho (desenho.js) ---------- */
-const estiloAtual = () => ({ cor: $('cor').value, tam: +$('tam').value, posi: $('posi').value, fundo: $('fundo').value });
+const estiloAtual = () => ({ fonte: $('fonte').value, anim: $('anim').value, cor: $('cor').value, tam: +$('tam').value, posi: $('posi').value, fundo: $('fundo').value });
+carregarFonte($('fonte').value);
+// ao trocar fonte ou animação, toca uma legenda como demonstração
+let fimDemo;
+async function demonstrar() {
+  await carregarFonte($('fonte').value);
+  const s = segs.find(s => s.fim > vid.currentTime) || segs[0];
+  if (!s) return;
+  clearTimeout(fimDemo); vid.currentTime = s.ini; vid.play().catch(() => {});
+  fimDemo = setTimeout(() => vid.pause(), (s.fim - s.ini) * 1000);
+}
+$('fonte').addEventListener('change', demonstrar);
+$('anim').addEventListener('change', demonstrar);
 (function previa() {
   if (!$('editor').hidden) {
-    const c = over.getContext('2d'); c.clearRect(0, 0, over.width, over.height); desenhar(c, vid.currentTime, segs, estiloAtual());
+    const c = over.getContext('2d'); c.clearRect(0, 0, over.width, over.height); // parado, mostra o texto inteiro para facilitar a revisão
+    desenhar(c, vid.currentTime, segs, vid.paused ? { ...estiloAtual(), anim: 'nenhuma' } : estiloAtual());
   }
   requestAnimationFrame(previa);
 })();
@@ -281,6 +294,7 @@ async function exportarNaTela() {
     ac.resume();
     await new Promise((ok, no) => { v.onloadeddata = ok; v.onerror = no; });
     cv.width = Math.floor(v.videoWidth / 2) * 2; cv.height = Math.floor(v.videoHeight / 2) * 2;
+    await carregarFonte($('fonte').value);
     const ctx = cv.getContext('2d');
     const total = () => Number.isFinite(v.duration) ? v.duration : proj.ms / 1000;
     const pintar = () => {

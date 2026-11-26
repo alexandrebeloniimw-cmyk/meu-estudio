@@ -28,10 +28,22 @@ function go(id) {
 }
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
 
+function formato(v) {
+  $('formato').value = v; store.set('formato', v);
+  document.querySelectorAll('[data-formato]').forEach(b => b.setAttribute('aria-pressed', b.dataset.formato === v));
+}
+document.querySelectorAll('[data-formato]').forEach(b => b.onclick = async () => {
+  if (state !== 'idle') return;
+  formato(b.dataset.formato);
+  if (!$('studio').hidden) { try { await camera(); } catch (e) { alert('Câmera indisponível (' + e.name + ')'); } }
+});
+
 for (const id of ['script', 'speed', 'size', 'formato', 'espera']) {
   $(id).value = store.get(id, $(id).value);
   $(id).addEventListener('input', () => { store.set(id, $(id).value); aplicar(); });
 }
+formato($('formato').value || 'v');
+$('formato').onchange = () => formato($('formato').value);
 $('mirror').checked = store.get('mirror') === '1';
 $('mirror').onchange = () => { store.set('mirror', $('mirror').checked ? '1' : '0'); aplicar(); };
 function aplicar() {
@@ -45,17 +57,55 @@ const tipoVideo = () => ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/
 /* ---------- estúdio ---------- */
 let stream, recorder, chunks = [], facing = 'user', raf, last, pos = 0, ms = 0, state = 'idle', countId, lock;
 
+let bruto, recorte, pedido = 0;
 async function camera() {
   parar();
-  const v = $('formato').value === 'v';
-  stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: facing, width: { ideal: v ? 1080 : 1920 }, height: { ideal: v ? 1920 : 1080 } },
+  const meu = ++pedido, v = $('formato').value === 'v', cam = $('cam');
+  const abrirCamera = (w, h) => navigator.mediaDevices.getUserMedia({
+    video: { facingMode: facing, width: { ideal: w }, height: { ideal: h } },
     audio: { echoCancellation: true, noiseSuppression: true }
   });
-  $('cam').srcObject = stream;
-  $('cam').classList.toggle('front', facing === 'user');
+  const mostrar = async (el, s) => {
+    el.srcObject = s;
+    await new Promise(ok => { el.onloadedmetadata = ok; });
+    await el.play().catch(() => {});
+  };
+  const soltar = s => s.getTracks().forEach(t => t.stop());
+  $('res').textContent = 'abrindo a câmera…';
+  // muitos celulares entregam a imagem "deitada": tenta as duas ordens de largura e altura
+  for (const [w, h] of v ? [[1080, 1920], [1920, 1080]] : [[1920, 1080], [1080, 1920]]) {
+    const s = await abrirCamera(w, h);
+    if (meu !== pedido) return soltar(s);
+    await mostrar(cam, s);
+    if (meu !== pedido) return soltar(s);
+    if ((cam.videoHeight > cam.videoWidth) === v) { stream = s; return pronta(cam.videoWidth, cam.videoHeight); }
+    soltar(s);
+  }
+  // último recurso: recorta o centro da imagem no formato escolhido
+  const s = await abrirCamera(2560, 1440);
+  if (meu !== pedido) return soltar(s);
+  const fonte = Object.assign(document.createElement('video'), { muted: true, playsInline: true });
+  await mostrar(fonte, s);
+  if (meu !== pedido) return soltar(s);
+  const fw = fonte.videoWidth, fh = fonte.videoHeight, prop = v ? 9 / 16 : 16 / 9;
+  const cw = Math.min(fw, fh * prop), ch = cw / prop, k = Math.min(1, 1920 / Math.max(cw, ch));
+  const c = Object.assign(document.createElement('canvas'), { width: Math.round(cw * k / 2) * 2, height: Math.round(ch * k / 2) * 2 });
+  const ctx = c.getContext('2d', { alpha: false });
+  const pintar = () => { ctx.drawImage(fonte, (fw - cw) / 2, (fh - ch) / 2, cw, ch, 0, 0, c.width, c.height); recorte = requestAnimationFrame(pintar); };
+  pintar();
+  bruto = s; stream = new MediaStream([...c.captureStream(30).getVideoTracks(), ...s.getAudioTracks()]);
+  await mostrar(cam, stream);
+  pronta(c.width, c.height);
 }
-function parar() { stream?.getTracks().forEach(t => t.stop()); stream = null; }
+function pronta(w, h) {
+  $('cam').classList.toggle('front', facing === 'user');
+  $('res').textContent = (h > w ? 'Vertical ' : 'Horizontal ') + w + '×' + h;
+}
+function parar() {
+  pedido++; cancelAnimationFrame(recorte);
+  for (const s of [stream, bruto]) s?.getTracks().forEach(t => t.stop());
+  stream = bruto = null;
+}
 
 async function abrir(comTexto) {
   const texto = comTexto ? $('script').value.trim() : '';
@@ -71,8 +121,9 @@ $('soGravar').onclick = () => abrir(false);
 function reset() {
   state = 'idle'; ms = 0; pos = 0; $('prompter').scrollTop = 0; $('count').textContent = '';
   $('rec').textContent = '● Gravar'; $('pausa').textContent = 'Pausar';
-  $('pausa').disabled = true; $('virar').disabled = $('fechar').disabled = false; relogio();
+  $('pausa').disabled = true; $('virar').disabled = $('fechar').disabled = false; travarFormato(false); relogio();
 }
+const travarFormato = t => document.querySelectorAll('#studio [data-formato]').forEach(b => b.disabled = t);
 function relogio() {
   const s = Math.floor(ms / 1000);
   $('timer').textContent = String(s / 60 | 0).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
@@ -103,7 +154,7 @@ $('rec').onclick = async () => {
   if (state === 'rec' || state === 'pause') { recorder.stop(); return; }
   if (state === 'count') { clearTimeout(countId); reset(); return; }
   if (!stream) return;
-  state = 'count'; $('virar').disabled = true; $('rec').textContent = 'Cancelar';
+  state = 'count'; travarFormato(true); $('virar').disabled = true; $('rec').textContent = 'Cancelar';
   await contar(+$('espera').value);
   const tipo = tipoVideo();
   chunks = [];
