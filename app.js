@@ -154,14 +154,30 @@ function card(i) {
   h.textContent = i.titulo + ' · ' + new Date(i.id).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
   const v = document.createElement('video'); v.controls = true; v.playsInline = true; v.preload = 'metadata';
   v.src = URL.createObjectURL(i.blob); urls.push(v.src);
-  const row = document.createElement('div'); row.className = 'row';
-  const btn = (t, f, c) => { const b = document.createElement('button'); b.textContent = t; b.onclick = f; if (c) b.className = c; row.append(b); };
-  btn('Salvar', () => baixar(i), 'primary');
-  const file = new File([i.blob], nome(i), { type: i.blob.type.split(';')[0] });
-  if (navigator.canShare?.({ files: [file] })) btn('Compartilhar', () => navigator.share({ files: [file] }).catch(() => {}));
-  btn('Legendas', () => editar(i));
-  btn('Apagar', async () => { if (confirm('Apagar este vídeo?')) { await db('readwrite', s => s.delete(i.id)); listar(); } });
-  el.append(h, v, row); return el;
+  const legendar = document.createElement('button');
+  legendar.textContent = 'Legendas'; legendar.className = 'largo'; legendar.onclick = () => editar(i);
+  el.append(h, v, menu(i, listar), legendar); return el;
+}
+// menu de ações de um vídeo: salvar, compartilhar e deletar
+function menu(i, aoDeletar) {
+  const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'group'); m.setAttribute('aria-label', 'Ações do vídeo');
+  const btn = (icone, t, f) => {
+    const b = document.createElement('button');
+    b.append(Object.assign(document.createElement('span'), { textContent: icone, ariaHidden: 'true' }), t);
+    b.onclick = f; m.append(b);
+  };
+  btn('💾', 'Salvar', () => baixar(i));
+  btn('📤', 'Compartilhar', async () => {
+    const file = new File([i.blob], nome(i), { type: i.blob.type.split(';')[0] || 'video/mp4' });
+    if (!navigator.canShare?.({ files: [file] })) return alert('Este navegador não compartilha este vídeo direto. Toque em Salvar e envie pela galeria.');
+    try { await navigator.share({ files: [file] }); }
+    catch (e) { if (e.name !== 'AbortError') alert('Não consegui compartilhar. Toque em Salvar e envie pela galeria.'); }
+  });
+  btn('🗑️', 'Deletar', async () => {
+    if (!confirm('Deletar este vídeo do app? Não dá para desfazer.')) return;
+    await db('readwrite', s => s.delete(i.id)); aoDeletar();
+  });
+  return m;
 }
 $('atualizar').onclick = async () => {
   if (!navigator.onLine) return alert('Conecte-se à internet para atualizar.');

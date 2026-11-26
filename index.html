@@ -54,12 +54,17 @@ nav button.on{color:var(--ac);font-weight:700}
 #exportando{position:fixed;inset:0;z-index:20;background:#0b1215;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;text-align:center;padding:24px}
 #exportando b{font-size:56px}
 .oculto{position:fixed;width:2px;height:2px;opacity:.01;left:0;top:0;pointer-events:none}
+.menu{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.menu button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;font-size:14px;background:#22343c}
+.menu span{font-size:22px}
+.largo{width:100%;background:#22343c}
+.nota{color:var(--mu);font-size:13px}
 </style>
 </head>
 <body>
 <main>
 <section id="criar">
-  <h1>Meu Estúdio <small style="font-size:13px;color:var(--mu)">versão 5</small></h1>
+  <h1>Meu Estúdio <small style="font-size:13px;color:var(--mu)">versão 6</small></h1>
   <button class="primary big" data-go="roteiro">+ Gravar com teleprompter</button>
   <div class="grid">
     <button id="soGravar">Gravar<small>sem texto</small></button>
@@ -76,6 +81,8 @@ nav button.on{color:var(--ac);font-weight:700}
 <section id="editor" hidden>
   <h1>Legendas</h1>
   <div id="palco"><video id="lvideo" controls playsinline controlslist="nofullscreen"></video><canvas id="lover"></canvas></div>
+  <div id="menuEditor"></div>
+  <p class="nota">Este menu vale para o vídeo aberto, sem as legendas atuais. Para salvar com legendas, use "Exportar".</p>
   <label>Reconhecimento de fala<select id="modelo">
     <option value="online">Alta precisão (online, precisa de chave)</option>
     <option value="onnx-community/whisper-base">No celular (offline, erra mais)</option>

@@ -29,6 +29,9 @@ function editar(item) {
   proj = item; segs = (item.segs || []).map(s => ({ ...s }));
   URL.revokeObjectURL(urlVid); urlVid = URL.createObjectURL(item.blob);
   vid.src = urlVid; $('status').textContent = ''; $('cancelarIA').hidden = true;
+  $('menuEditor').replaceChildren(menu(item, () => {
+    clearTimeout(salvarId); if ($('gerar').disabled) encerrarIA(''); vid.removeAttribute('src'); vid.load(); go('projetos');
+  }));
   go('editor'); montar();
 }
 vid.onloadedmetadata = () => {
