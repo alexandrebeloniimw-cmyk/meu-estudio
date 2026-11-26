@@ -12,17 +12,67 @@
     c.contraste !== 100 ? `contrast(${c.contraste / 100})` : '',
     c.saturacao !== 100 ? `saturate(${c.saturacao / 100})` : ''].join(' ').trim() || 'none';
 
-  // pinta o clipe na camada: w e h são o tamanho da imagem original; pintar(ctx,x,y,lw,lh) a desenha
-  function clipe(ctx, c, w, h, pintar, t, anterior, proximo) {
+  const auxiliares = {};
+  function auxiliar(nome, w, h) {
+    const c = auxiliares[nome] ||= self.document ? document.createElement('canvas') : new OffscreenCanvas(1, 1);
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    const x = c.getContext('2d'); x.clearRect(0, 0, w, h);
+    return [c, x];
+  }
+  // fundos prontos, desenhados pelo próprio app
+  const PRONTOS = {
+    estudio: ['#2d56ad', '#0b1740'], claro: ['#ffffff', '#c3d0ea'], quente: ['#e7b57a', '#4a2412'],
+    palco: ['#4a3a8c', '#07050f'], luzes: ['#1d2f63', '#050a1c'], natureza: ['#bfe3c9', '#1f5141']
+  };
+  function pronto(ctx, nome, W, H) {
+    const [claro, escuro] = PRONTOS[nome] || PRONTOS.estudio, M = Math.max(W, H);
+    const g = ctx.createRadialGradient(W / 2, H * .32, M * .02, W / 2, H * .4, M * .75);
+    g.addColorStop(0, claro); g.addColorStop(1, escuro); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (nome === 'luzes') for (let i = 0; i < 26; i++) {
+      const x = (i * 0.618 % 1) * W, y = (i * 0.377 % 1) * H, r = M * (.018 + (i * .271 % 1) * .045);
+      const l = ctx.createRadialGradient(x, y, 0, x, y, r);
+      l.addColorStop(0, i % 3 ? 'rgba(150,185,255,.4)' : 'rgba(255,210,140,.45)'); l.addColorStop(.75, i % 3 ? 'rgba(150,185,255,.22)' : 'rgba(255,210,140,.24)'); l.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = l; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    if (nome === 'palco') {
+      ctx.fillStyle = 'rgba(255,255,255,.07)';
+      for (const x of [.15, .85]) { ctx.beginPath(); ctx.moveTo(x * W, 0); ctx.lineTo((x - .3) * W, H); ctx.lineTo((x + .3) * W, H); ctx.fill(); }
+    }
+  }
+  function cobrir(ctx, img, W, H) {
+    const k = Math.max(W / img.width, H / img.height);
+    ctx.drawImage(img, (W - img.width * k) / 2, (H - img.height * k) / 2, img.width * k, img.height * k);
+  }
+
+  // pinta o clipe na camada: w e h são o tamanho da imagem original; pintar(ctx,x,y,lw,lh) a desenha.
+  // recorte (opcional): { mascara, foto } para trocar o fundo
+  function clipe(ctx, c, w, h, pintar, t, anterior, proximo, recorte) {
     const W = ctx.canvas.width, H = ctx.canvas.height, d = dur(c);
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
     if (w && h) {
       const deitado = c.giro % 180 !== 0, rw = deitado ? h : w, rh = deitado ? w : h;
       let k = (c.encaixe === 'ajustar' ? Math.min : Math.max)(W / rw, H / rh);
       if (c.tipo === 'foto' && c.movimento) k *= 1 + .12 * Math.min(1, t / d);
-      ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(c.giro * Math.PI / 180); ctx.filter = filtro(c);
-      pintar(ctx, -w * k / 2, -h * k / 2, w * k, h * k);
-      ctx.restore();
+      const posicionar = x => { x.save(); x.translate(x.canvas.width / 2, x.canvas.height / 2); x.rotate(c.giro * Math.PI / 180); };
+      const f = c.tipo === 'video' ? c.fundo : null, trocar = recorte?.mascara && f && f.tipo !== 'original';
+      if (!trocar) {
+        posicionar(ctx); ctx.filter = filtro(c); pintar(ctx, -w * k / 2, -h * k / 2, w * k, h * k); ctx.restore();
+      } else {
+        if (f.tipo === 'cor') { ctx.fillStyle = f.cor; ctx.fillRect(0, 0, W, H); }
+        else if (f.tipo === 'foto' && recorte.foto) cobrir(ctx, recorte.foto, W, H);
+        else if (f.tipo === 'desfoque') {
+          // desfoca numa versão pequena: fica leve para o celular
+          const [p, px] = auxiliar('fundo', Math.round(W / 6), Math.round(H / 6));
+          posicionar(px); px.filter = `blur(${1 + f.forca / 12}px) ${c.filtro === 'normal' ? '' : FILTROS[c.filtro]}`;
+          pintar(px, -w * k / 12 * 1.04, -h * k / 12 * 1.04, w * k / 6 * 1.04, h * k / 6 * 1.04); px.restore();
+          ctx.drawImage(p, 0, 0, W, H);
+        } else pronto(ctx, f.pronto, W, H);
+        const [pessoa, qx] = auxiliar('pessoa', W, H);
+        posicionar(qx); qx.filter = filtro(c); pintar(qx, -w * k / 2, -h * k / 2, w * k, h * k);
+        qx.globalCompositeOperation = 'destination-in'; qx.filter = `blur(${f.borda / 100 * Math.min(W, H) / 400}px)`;
+        qx.drawImage(recorte.mascara, -w * k / 2, -h * k / 2, w * k, h * k); qx.restore();
+        ctx.drawImage(pessoa, 0, 0);
+      }
     }
     const p = t / Math.min(TRANS, d / 2);
     if (p < 1 && anterior) {

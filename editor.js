@@ -62,7 +62,7 @@
   function carregar() {
     return carregando ||= (async () => {
       proj = await db('readonly', s => s.get('rascunho'), 'montagens').catch(() => null) || vazio();
-      const usadas = new Set([...proj.clipes.map(c => c.midia), proj.musica?.midia, proj.narracao?.midia, proj.logo?.midia]);
+      const usadas = new Set([...proj.clipes.flatMap(c => [c.midia, c.fundo?.midia]), proj.musica?.midia, proj.narracao?.midia, proj.logo?.midia]);
       const salvas = await db('readonly', s => s.getAll(), 'midias').catch(() => []);
       for (const m of salvas) {
         if (usadas.has(m.id)) midias.set(m.id, { blob: m.blob, url: URL.createObjectURL(m.blob) });
@@ -72,6 +72,7 @@
       for (const k of ['musica', 'narracao', 'logo']) if (proj[k] && !midias.has(proj[k].midia)) proj[k] = null;
       for (const c of proj.clipes) await preparar(c).catch(() => {});
       await Promise.all(proj.textos.map(x => carregarFonte(x.fonte)));
+      for (const c of proj.clipes) if (c.fundo?.midia) await fotoDeFundo(c.fundo.midia);
       if (proj.logo) midias.get(proj.logo.midia).img = await createImageBitmap(midias.get(proj.logo.midia).blob);
       ligarSons();
       aberto = true;
@@ -129,6 +130,67 @@
       ...itens.map(i => new Option(`${i.titulo} · ${new Date(i.id).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`, i.id)));
     $('eprojetos').hidden = !itens.length;
   }
+
+  /* ---------- fundo (recorte da pessoa) ---------- */
+  const fundoPadrao = () => ({ tipo: 'original', cor: '#12275a', pronto: 'estudio', forca: 40, ajuste: 50, borda: 30, midia: null });
+  const comRecorte = c => c?.tipo === 'video' && c.fundo && c.fundo.tipo !== 'original';
+  let recortador, preparandoRecorte, chaveRecorte = '', mascara, falhaRecorte = false;
+  async function fotoDeFundo(id) {
+    const m = midias.get(id);
+    if (m) m.img ||= await createImageBitmap(m.blob, { imageOrientation: 'from-image' }).catch(() => undefined);
+  }
+  function ligarRecorte() {
+    if (recortador || preparandoRecorte) return;
+    falhaRecorte = false; aviso('Preparando o removedor de fundo… Na primeira vez baixa cerca de 15 MB.');
+    preparandoRecorte = RECORTE.criar().then(r => { recortador = r; chaveRecorte = ''; aviso(''); })
+      .catch(e => { console.warn(e); falhaRecorte = true; aviso('Não consegui ligar o removedor de fundo. Confira a internet e toque de novo na opção de fundo.'); })
+      .finally(() => preparandoRecorte = null);
+  }
+  function recorteDaPrevia(c, w, h, fonte, instante) {
+    if (!comRecorte(c)) return;
+    if (!recortador) { if (!falhaRecorte) ligarRecorte(); return; }
+    // só recalcula quando a imagem ou o ajuste mudam
+    const chave = [c.id, instante.toFixed(3), c.fundo.ajuste, c.fundo.borda].join();
+    if (chave !== chaveRecorte) {
+      if (!tocando) recortador.esquecer();
+      try { mascara = recortador.processar(w, h, (x, ...r) => x.drawImage(fonte, ...r), c.fundo.ajuste, c.fundo.borda); chaveRecorte = chave; }
+      catch (e) { console.warn(e); return; }
+    }
+    return { mascara, foto: c.fundo.midia && midias.get(c.fundo.midia)?.img };
+  }
+  function montarFundo(c) {
+    const f = c.fundo || fundoPadrao();
+    $('f-tipo').value = f.tipo; $('f-cor').value = f.cor; $('f-pronto').value = f.pronto;
+    for (const k of ['forca', 'ajuste', 'borda']) $('f-' + k).value = f[k];
+    $('fo-cor').hidden = f.tipo !== 'cor'; $('fo-pronto').hidden = f.tipo !== 'pronto'; $('fo-foto').hidden = f.tipo !== 'foto'; $('fo-desfoque').hidden = f.tipo !== 'desfoque';
+    $('fo-ajustes').hidden = f.tipo === 'original';
+    $('efundofoto').textContent = f.midia ? 'Trocar a foto de fundo' : 'Escolher foto de fundo';
+  }
+  for (const k of ['tipo', 'cor', 'pronto', 'forca', 'ajuste', 'borda']) $('f-' + k).addEventListener('input', () => {
+    const c = proj.clipes[sel]; if (!c) return;
+    pausar();
+    const v = $('f-' + k).value;
+    c.fundo = { ...(c.fundo || fundoPadrao()), [k]: ['forca', 'ajuste', 'borda'].includes(k) ? +v : v };
+    if (comRecorte(c)) { falhaRecorte = false; ligarRecorte(); }
+    if (achar(t).i !== sel) t = inicioDe(sel) + Math.min(.8, MONTAGEM.dur(c) / 2);
+    noQuadro = -1; guardar(); montarFundo(c);
+    if (k === 'tipo' && v === 'foto' && !c.fundo.midia) aviso('Agora escolha a foto de fundo.');
+  });
+  $('efundofoto').onclick = () => $('earqfundo').click();
+  $('earqfundo').onchange = async () => {
+    const f = $('earqfundo').files[0], c = proj.clipes[sel]; $('earqfundo').value = '';
+    if (!f || !c) return;
+    const midia = await novaMidia(f);
+    await fotoDeFundo(midia);
+    if (!midias.get(midia).img) return aviso('Não consegui abrir esta imagem. Use JPG ou PNG.');
+    c.fundo = { ...(c.fundo || fundoPadrao()), tipo: 'foto', midia };
+    ligarRecorte(); noQuadro = -1; guardar(); montarFundo(c);
+  };
+  $('efundotodos').onclick = () => {
+    const f = proj.clipes[sel].fundo || fundoPadrao();
+    for (const x of proj.clipes) if (x.tipo === 'video') x.fundo = { ...f };
+    guardar(); aviso('Fundo aplicado a todos os vídeos.');
+  };
 
   /* ---------- prévia ---------- */
   function ajustarTela() {
@@ -190,7 +252,8 @@
       if (!tocando && !v.paused) v.pause();
     }
     if (c.tipo === 'foto' || m.el.readyState >= 2)
-      MONTAGEM.clipe(cx, c, w, h, (x, ...r) => x.drawImage(fonte, ...r), local, antes.de === i ? antes : null, proj.clipes[i + 1]);
+      MONTAGEM.clipe(cx, c, w, h, (x, ...r) => x.drawImage(fonte, ...r), local, antes.de === i ? antes : null, proj.clipes[i + 1],
+        c.tipo === 'video' ? recorteDaPrevia(c, w, h, fonte, fonte.currentTime) : undefined);
     tx.drawImage(camada, 0, 0);
     MONTAGEM.sobrepor(tx, t, proj.textos, proj.logo, proj.logo && midias.get(proj.logo.midia).img);
     const mu = proj.musica, na = proj.narracao, gravando = gravador?.state === 'recording';
@@ -240,6 +303,8 @@
     }
     for (const k of ['dur', 'vel', 'volume', 'filtro', 'brilho', 'contraste', 'saturacao', 'encaixe', 'transicao']) if (c[k] !== undefined) $('c-' + k).value = c[k];
     $('c-movimento').checked = !!c.movimento;
+    $('efundo').hidden = c.tipo === 'foto';
+    if (c.tipo === 'video') { montarFundo(c); if (comRecorte(c)) ligarRecorte(); }
     rotulos(c);
     $('eantes').disabled = sel === 0; $('edepois').disabled = sel === proj.clipes.length - 1;
     $('c-transicao').disabled = sel === 0;
@@ -408,6 +473,9 @@
     if (ocupado) return aviso('Aguarde terminar de adicionar os arquivos.');
     pausar();
     if (!self.VideoEncoder || !self.OffscreenCanvas) return aviso('Este navegador não consegue gerar o vídeo. Atualize o Chrome e tente de novo.');
+    const longos = proj.clipes.filter(comRecorte).reduce((s, c) => s + MONTAGEM.dur(c), 0);
+    if (longos > 300 && !confirm(`Há ${mm(longos)} de vídeo com troca de fundo. Pode demorar bastante e esquentar o celular. Continuar?`)) return;
+    let comeco = 0;
     const arquivos = {};
     for (const [id, m] of midias) arquivos[id] = m.blob;
     pedirAviso(); manterVivo(true);
@@ -419,7 +487,12 @@
     $('dica').textContent = 'Pode usar outros aplicativos. Não feche o Meu Estúdio.';
     w.onerror = () => falhar('falha ao iniciar.');
     w.onmessage = async ({ data: d }) => {
-      if (d.tipo === 'progresso') $('perc').textContent = Math.min(99, Math.round(d.p * 100)) + '%';
+      if (d.tipo === 'progresso') {
+        $('perc').textContent = Math.min(99, Math.round(d.p * 100)) + '%';
+        comeco ||= Date.now() - 1;
+        const resta = (Date.now() - comeco) / 1000 * (1 - d.p) / d.p;
+        if (d.p > .05) $('dica').textContent = `Faltam cerca de ${resta < 90 ? Math.ceil(resta / 5) * 5 + ' segundos' : Math.ceil(resta / 60) + ' minutos'}. Não feche o Meu Estúdio.`;
+      }
       else if (d.tipo === 'erro') falhar(d.msg);
       else if (d.tipo === 'pronto') {
         fim();

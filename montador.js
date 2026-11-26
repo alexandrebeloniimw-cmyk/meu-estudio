@@ -1,6 +1,7 @@
 // Gera o vídeo do editor dentro de um worker: imagem quadro a quadro e mistura do som
 import './desenho.js';
 import './quadro.js';
+import './recorte.js';
 import { Input, Output, BlobSource, BufferTarget, Mp4OutputFormat, ALL_FORMATS, VideoSampleSink, AudioSampleSink, CanvasSource, AudioSampleSource, AudioSample, getFirstEncodableVideoCodec, getFirstEncodableAudioCodec } from './vendor/mediabunny.min.mjs';
 
 const FPS = 30, SR = 48000, POR_QUADRO = SR / FPS;
@@ -107,6 +108,11 @@ onmessage = async ({ data: { proj, midias, qualidade } }) => {
 
     await Promise.all(textos.map(t => carregarFonte(t.fonte)));
     const imagemLogo = logo ? await createImageBitmap(midias[logo.midia]) : null;
+    const comRecorte = c => c.tipo === 'video' && c.fundo && c.fundo.tipo !== 'original';
+    const recortador = clipes.some(comRecorte) ? await RECORTE.criar() : null;
+    const fotos = new Map();
+    for (const c of clipes) if (comRecorte(c) && c.fundo.tipo === 'foto' && midias[c.fundo.midia] && !fotos.has(c.fundo.midia))
+      fotos.set(c.fundo.midia, await createImageBitmap(midias[c.fundo.midia], { imageOrientation: 'from-image' }));
     const fundo = musica ? await lerSom(midias[musica.midia], 0) : null;
     const voz2 = narracao ? await lerSom(midias[narracao.midia], 0) : null;
     await output.start();
@@ -117,7 +123,9 @@ onmessage = async ({ data: { proj, midias, qualidade } }) => {
 
       const imagem = async () => {
         const pintar = async (k, w, h, desenhaFonte) => {
-          MONTAGEM.clipe(cx, c, w, h, desenhaFonte, k / FPS, i ? antes : null, clipes[i + 1]);
+          let recorte;
+          if (comRecorte(c) && w) recorte = { mascara: recortador.processar(w, h, desenhaFonte, c.fundo.ajuste, c.fundo.borda), foto: fotos.get(c.fundo.midia) };
+          MONTAGEM.clipe(cx, c, w, h, desenhaFonte, k / FPS, i ? antes : null, clipes[i + 1], recorte);
           ctx.drawImage(camada, 0, 0);
           MONTAGEM.sobrepor(ctx, (q + k) / FPS, textos, logo, imagemLogo);
           await saidaV.add((q + k) / FPS, 1 / FPS);
@@ -178,6 +186,7 @@ onmessage = async ({ data: { proj, midias, qualidade } }) => {
         }
       };
 
+      recortador?.esquecer();
       await Promise.all([imagem(), som()]);
       ax.drawImage(camada, 0, 0);
       q += n;

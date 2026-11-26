@@ -1,0 +1,4 @@
+Recorte de pessoa usado no editor. Licença Apache 2.0 (https://www.apache.org/licenses/LICENSE-2.0), Google.
+- vision_bundle.mjs e vision_wasm_module_internal.*: pacote npm @mediapipe/tasks-vision 1.2.3
+- selfie_segmentation.tflite: pacote npm @mediapipe/selfie_segmentation 0.1.1675465747.
+  MODIFICADO: foram acrescentados metadados de normalização (média 0, desvio 255); os pesos não mudaram.
