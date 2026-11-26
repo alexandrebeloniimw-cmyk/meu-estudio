@@ -1,5 +1,5 @@
 // rede primeiro (recebe atualizações); cache para usar sem internet
-const C = 'estudio-v7';
+const C = 'estudio-v8';
 const LIBS = 'https://cdn.jsdelivr.net/';
 const F = ['./', 'index.html', 'app.js', 'legendas.js', 'worker.js', 'desenho.js', 'fundo.js', 'online.js', 'exportador.js', 'vendor/mediabunny.min.mjs', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(C).then(c => c.addAll(F.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting())));

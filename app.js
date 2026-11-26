@@ -107,7 +107,7 @@ $('rec').onclick = async () => {
   await contar(+$('espera').value);
   const tipo = tipoVideo();
   chunks = [];
-  recorder = new MediaRecorder(stream, { mimeType: tipo, videoBitsPerSecond: 8e6 });
+  recorder = new MediaRecorder(stream, { mimeType: tipo, videoBitsPerSecond: 16e6 });
   recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
   recorder.onstop = salvar;
   recorder.start(1000);

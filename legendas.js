@@ -214,7 +214,8 @@ $('srt').onclick = () => {
 };
 let cancelarExport, naTela = false, pendente = null;
 const temLegendas = i => !!(i === proj ? segs.length : i.segs?.length);
-const assinatura = () => JSON.stringify([segs, estiloAtual()]);
+// o número muda quando a qualidade da exportação muda, para não reaproveitar versões antigas
+const assinatura = () => JSON.stringify([2, segs, estiloAtual()]);
 async function comLegendas(item, acao) {
   if (item !== proj || $('editor').hidden) editar(item);
   // se já existe uma versão idêntica pronta, não gera outra
@@ -225,6 +226,7 @@ async function comLegendas(item, acao) {
 }
 function mostrarPronto(item, acao) {
   go('pronto');
+  $('pinfo').textContent = item.info || '';
   URL.revokeObjectURL($('pvideo').src); $('pvideo').src = URL.createObjectURL(item.blob);
   $('psalvar').onclick = () => baixar(item);
   $('pcompartilhar').onclick = () => compartilhar(item);
@@ -232,8 +234,8 @@ function mostrarPronto(item, acao) {
   if (acao === 'salvar' && !document.hidden) baixar(item);
   else if (acao === 'compartilhar') informar('Vídeo com legendas pronto. Toque em Compartilhar. (Toque para fechar)');
 }
-async function salvarExportado(blob, ms, original) {
-  const item = { id: Date.now(), blob, ms, origem: original.id, assinatura: assinatura(), titulo: ('Legendado: ' + original.titulo).slice(0, 40) };
+async function salvarExportado(blob, ms, original, info) {
+  const item = { id: Date.now(), blob, ms, info, origem: original.id, assinatura: assinatura(), titulo: ('Legendado: ' + original.titulo).slice(0, 40) };
   try { await db('readwrite', s => s.put(item)); }
   catch { informar('Sem espaço para guardar no app. Salve agora o vídeo pronto.'); }
   avisar('Vídeo com legendas pronto. Toque para abrir.');
@@ -256,7 +258,7 @@ function iniciarExportacao(acao) {
   w.onmessage = async ({ data: d }) => {
     if (d.tipo === 'progresso') $('perc').textContent = Math.min(99, Math.round(d.p * 100)) + '%';
     else if (d.tipo === 'erro') { console.warn(d.msg); alternativa(); }
-    else if (d.tipo === 'pronto') { fim(); await salvarExportado(d.blob, d.ms, original); }
+    else if (d.tipo === 'pronto') { fim(); await salvarExportado(d.blob, d.ms, original, d.info); }
   };
   w.postMessage({ blob: original.blob, segs, estilo: estiloAtual() });
 }
@@ -278,7 +280,7 @@ async function exportarNaTela() {
     fonte.connect(saida);
     ac.resume();
     await new Promise((ok, no) => { v.onloadeddata = ok; v.onerror = no; });
-    [cv.width, cv.height] = tamanho(v);
+    cv.width = Math.floor(v.videoWidth / 2) * 2; cv.height = Math.floor(v.videoHeight / 2) * 2;
     const ctx = cv.getContext('2d');
     const total = () => Number.isFinite(v.duration) ? v.duration : proj.ms / 1000;
     const pintar = () => {
@@ -289,12 +291,13 @@ async function exportarNaTela() {
     pintar();
     const fluxo = new MediaStream([...cv.captureStream(30).getVideoTracks(), ...saida.stream.getAudioTracks()]);
     const partes = [];
-    rec = new MediaRecorder(fluxo, { mimeType: tipoVideo(), videoBitsPerSecond: 8e6 });
+    const original = proj, origemBps = original.ms ? original.blob.size * 8000 / original.ms : original.blob.size * 8 / (v.duration || 60);
+    rec = new MediaRecorder(fluxo, { mimeType: tipoVideo(), videoBitsPerSecond: Math.round(Math.min(60e6, Math.max(origemBps * 1.2, cv.width * cv.height * 30 * .25, 10e6))) });
     rec.ondataavailable = e => e.data.size && partes.push(e.data);
     rec.onstop = async () => {
       const dur = v.currentTime * 1000, tipo = rec.mimeType; limpar();
       if (cancelado) return;
-      await salvarExportado(new Blob(partes, { type: tipo }), dur, proj);
+      await salvarExportado(new Blob(partes, { type: tipo }), dur, original, `Modo compatível · ${cv.width}×${cv.height}`);
     };
     v.onended = () => rec.state !== 'inactive' && rec.stop();
     if (cancelado) return;
