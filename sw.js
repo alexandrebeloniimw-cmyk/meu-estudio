@@ -1,7 +1,7 @@
 // rede primeiro (recebe atualizações); cache para usar sem internet
-const C = 'estudio-v9';
+const C = 'estudio-v10';
 const LIBS = 'https://cdn.jsdelivr.net/';
-const F = ['./', 'index.html', 'app.js', 'legendas.js', 'worker.js', 'desenho.js', 'fundo.js', 'online.js', 'exportador.js', 'vendor/mediabunny.min.mjs', 'vendor/anton-latin-400-normal.woff2', 'vendor/bangers-latin-400-normal.woff2', 'vendor/bebas-neue-latin-400-normal.woff2', 'vendor/lobster-latin-400-normal.woff2', 'vendor/montserrat-latin-800-normal.woff2', 'vendor/oswald-latin-700-normal.woff2', 'vendor/pacifico-latin-400-normal.woff2', 'vendor/playfair-display-latin-700-normal.woff2', 'vendor/poppins-latin-800-normal.woff2', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+const F = ['./', 'index.html', 'app.js', 'legendas.js', 'worker.js', 'desenho.js', 'fundo.js', 'online.js', 'exportador.js', 'corte.js', 'cortador.js', 'vendor/mediabunny.min.mjs', 'vendor/anton-latin-400-normal.woff2', 'vendor/bangers-latin-400-normal.woff2', 'vendor/bebas-neue-latin-400-normal.woff2', 'vendor/lobster-latin-400-normal.woff2', 'vendor/montserrat-latin-800-normal.woff2', 'vendor/oswald-latin-700-normal.woff2', 'vendor/pacifico-latin-400-normal.woff2', 'vendor/playfair-display-latin-700-normal.woff2', 'vendor/poppins-latin-800-normal.woff2', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(C).then(c => c.addAll(F.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys()
   .then(k => Promise.all(k.filter(n => n.startsWith('estudio-') && n !== C).map(n => caches.delete(n))))

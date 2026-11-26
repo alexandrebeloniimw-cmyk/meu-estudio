@@ -15,14 +15,17 @@ for (const id of ['modelo', 'cor', 'tam', 'posi', 'fundo', 'fonte', 'anim']) {
 }
 
 /* ---------- abrir ---------- */
-$('importar').onclick = () => $('arquivo').click();
+let paraCortar = false;
+const escolherVideo = corte => { paraCortar = corte; $('arquivo').click(); };
+$('importar').onclick = () => escolherVideo(false);
+$('importarCorte').onclick = () => escolherVideo(true);
 $('arquivo').onchange = async () => {
   const f = $('arquivo').files[0]; $('arquivo').value = '';
   if (!f) return;
   const item = { id: Date.now(), blob: f, ms: 0, titulo: f.name.replace(/\.[^.]+$/, '').slice(0, 40) };
   try { await db('readwrite', s => s.put(item)); }
   catch { alert('Sem espaço para guardar o projeto. Você ainda pode editar e exportar agora.'); }
-  editar(item);
+  paraCortar ? cortar(item) : editar(item);
 };
 function editar(item) {
   if ($('gerar').disabled) encerrarIA('');
@@ -239,6 +242,7 @@ async function comLegendas(item, acao) {
 }
 function mostrarPronto(item, acao) {
   go('pronto');
+  $('ptitulo').textContent = 'Vídeo com legendas pronto ✅';
   $('pinfo').textContent = item.info || '';
   URL.revokeObjectURL($('pvideo').src); $('pvideo').src = URL.createObjectURL(item.blob);
   $('psalvar').onclick = () => baixar(item);

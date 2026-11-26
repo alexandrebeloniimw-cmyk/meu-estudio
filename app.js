@@ -24,6 +24,7 @@ function go(id) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.go === id));
   if (id !== 'editor') $('lvideo')?.pause();
   if (id !== 'pronto') $('pvideo').pause();
+  if (id !== 'corte') $('cvideo').pause();
   if (id === 'projetos') listar();
 }
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
@@ -216,7 +217,11 @@ function card(i) {
   v.src = URL.createObjectURL(i.blob); urls.push(v.src);
   const legendar = document.createElement('button');
   legendar.textContent = 'Legendas'; legendar.className = 'largo'; legendar.onclick = () => editar(i);
-  el.append(h, v, menu(i, listar), legendar);
+  const tesoura = document.createElement('button');
+  tesoura.textContent = '✂️ Cortar'; tesoura.className = 'largo'; tesoura.onclick = () => cortar(i);
+  const acoes = Object.assign(document.createElement('div'), { className: 'row' });
+  acoes.append(legendar, tesoura);
+  el.append(h, v, menu(i, listar), acoes);
   if (i.segs?.length) el.append(Object.assign(document.createElement('p'), { className: 'nota', textContent: 'Salvar e Compartilhar incluem as legendas.' }));
   return el;
 }

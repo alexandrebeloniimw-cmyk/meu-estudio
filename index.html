@@ -61,6 +61,9 @@ nav button.on{color:var(--ac);font-weight:700}
 .nota{color:var(--mu);font-size:13px}
 #pvideo{width:100%;max-height:48vh;background:#000;border-radius:12px;margin-bottom:12px}
 #aviso{position:fixed;left:12px;right:12px;bottom:84px;z-index:30;background:#eef6f5;color:#04211d;border-radius:14px;padding:14px;font-weight:600;white-space:pre-line;overflow-wrap:anywhere}
+#cvideo{width:100%;max-height:36vh;background:#000;border-radius:12px;margin-bottom:6px}
+#linha{display:block;width:100%;border-radius:10px;touch-action:none;margin:6px 0}
+.passos{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}.passos button{padding:12px 0}
 .seletor{display:flex;gap:8px;margin-bottom:10px}.seletor button{flex:1;background:#22343c}
 .seletor button[aria-pressed=true]{background:var(--ac);color:#04211d;font-weight:700}
 </style>
@@ -68,14 +71,14 @@ nav button.on{color:var(--ac);font-weight:700}
 <body>
 <main>
 <section id="criar">
-  <h1>Meu Estúdio <small style="font-size:13px;color:var(--mu)">versão 9</small></h1>
+  <h1>Meu Estúdio <small style="font-size:13px;color:var(--mu)">versão 10</small></h1>
   <div class="seletor" role="group" aria-label="Formato do vídeo"><button data-formato="v">▯ Vertical</button><button data-formato="h">▭ Horizontal</button></div>
   <button class="primary big" data-go="roteiro">+ Gravar com teleprompter</button>
   <div class="grid">
     <button id="soGravar">Gravar<small>sem texto</small></button>
     <button data-go="roteiro">Roteiro<small>escrever ou colar</small></button>
     <button id="importar">Legendas<small>vídeo da galeria</small></button>
-    <button disabled>Cortar vídeo<small>em breve</small></button>
+    <button id="importarCorte">Cortar vídeo<small>vídeo da galeria</small></button>
   </div>
 </section>
 <section id="roteiro" hidden>
@@ -107,8 +110,30 @@ nav button.on{color:var(--ac);font-weight:700}
   <div class="row"><button id="nova">+ Legenda</button><button id="srt">Baixar .srt</button></div>
   <button class="primary big" id="exportar" style="margin-top:12px">Exportar vídeo com legendas</button>
 </section>
+<section id="corte" hidden>
+  <h1>Cortar vídeo</h1>
+  <video id="cvideo" playsinline preload="auto"></video>
+  <p class="nota" id="ctempo"></p>
+  <canvas id="linha" width="900" height="165" aria-label="Linha do tempo: toque ou arraste para escolher o ponto" role="img"></canvas>
+  <div class="passos"><button data-passo="-1">−1 s</button><button data-passo="-0.1">−0,1</button><button id="cplay" aria-label="Tocar ou pausar">▶</button><button data-passo="0.1">+0,1</button><button data-passo="1">+1 s</button></div>
+  <p class="nota" id="ctrecho"></p>
+  <p id="cstatus" role="status" style="margin-top:8px;color:var(--ac)"></p>
+  <div class="menu">
+    <button id="cini"><span aria-hidden="true">⇤</span>Começar aqui</button>
+    <button id="cdiv"><span aria-hidden="true">✂️</span>Dividir</button>
+    <button id="cfim"><span aria-hidden="true">⇥</span>Terminar aqui</button>
+    <button id="capagar"><span aria-hidden="true">🗑️</span>Apagar trecho</button>
+    <button id="cdesfazer"><span aria-hidden="true">↩️</span>Desfazer</button>
+    <button id="cinteiro"><span aria-hidden="true">🔄</span>Recomeçar</button>
+  </div>
+  <label>Tirar pausas maiores que<select id="cpausa"><option value="0.5">0,5 segundo (bem dinâmico)</option><option value="0.8" selected>0,8 segundo (equilibrado)</option><option value="1.5">1,5 segundo (só pausas longas)</option></select></label>
+  <button class="largo" id="csil" style="margin-bottom:12px">🤫 Tirar silêncios</button>
+  <button class="primary big" id="cgerar">Gerar vídeo cortado</button>
+  <button class="largo" id="ctrechoSo">Gerar só o trecho marcado</button>
+  <p class="nota" style="margin-top:12px">O vídeo original continua guardado em Projetos.</p>
+</section>
 <section id="pronto" hidden>
-  <h1>Vídeo com legendas pronto ✅</h1>
+  <h1 id="ptitulo">Vídeo com legendas pronto ✅</h1>
   <video id="pvideo" controls playsinline></video>
   <p class="nota" id="pinfo" style="margin-bottom:12px"></p>
   <button class="primary big" id="psalvar">💾 Salvar na galeria</button>
@@ -159,5 +184,6 @@ nav button.on{color:var(--ac);font-weight:700}
 <script src="fundo.js"></script>
 <script src="online.js"></script>
 <script src="legendas.js"></script>
+<script src="corte.js"></script>
 </body>
 </html>
