@@ -24,6 +24,7 @@ button:disabled{opacity:.45}
 textarea{width:100%;height:45vh;background:var(--card);color:var(--tx);border:0;border-radius:14px;padding:14px;font:18px/1.5 system-ui;margin-bottom:12px}
 label{display:block;margin:12px 0;color:var(--mu)}
 input[type=range]{width:100%;accent-color:var(--ac)}
+#chave{width:100%;padding:12px;border:0;border-radius:12px;background:var(--card);color:var(--tx);font:inherit;margin-top:6px}
 select{width:100%;padding:12px;border-radius:12px;background:var(--card);color:var(--tx);border:0;font:inherit;margin-top:6px}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#111b20;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
 nav button{flex:1;background:none;color:var(--mu)}
@@ -76,9 +77,8 @@ nav button.on{color:var(--ac);font-weight:700}
   <h1>Legendas</h1>
   <div id="palco"><video id="lvideo" controls playsinline controlslist="nofullscreen"></video><canvas id="lover"></canvas></div>
   <label>Reconhecimento de fala<select id="modelo">
-    <option value="onnx-community/whisper-base">Equilibrado (recomendado)</option>
-    <option value="onnx-community/whisper-tiny">Rápido, erra mais</option>
-    <option value="onnx-community/whisper-small">Mais preciso, pesado e lento</option>
+    <option value="online">Alta precisão (online, precisa de chave)</option>
+    <option value="onnx-community/whisper-base">No celular (offline, erra mais)</option>
   </select></label>
   <button class="primary big" id="gerar">Gerar legendas automáticas</button>
   <p id="status" role="status"></p>
@@ -99,6 +99,8 @@ nav button.on{color:var(--ac);font-weight:700}
   <label>Formato do vídeo<select id="formato"><option value="v">Vertical (Reels, Status)</option><option value="h">Horizontal (YouTube)</option></select></label>
   <label>Contagem regressiva<select id="espera"><option value="3">3 segundos</option><option value="5">5 segundos</option><option value="0">Sem contagem</option></select></label>
   <label><input type="checkbox" id="mirror"> Espelhar o texto (vidro de teleprompter)</label>
+  <label>Chave da Groq (alta precisão nas legendas)<input type="password" id="chave" autocomplete="off" placeholder="gsk_..."></label>
+  <p style="color:var(--mu);margin-bottom:16px">Crie a chave em <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--ac)">console.groq.com/keys</a>. Ela fica guardada só neste aparelho. Na alta precisão, o áudio do vídeo é enviado à Groq.</p>
   <p style="color:var(--mu)">Os vídeos ficam somente neste aparelho. Salve na galeria os que quiser guardar: limpar os dados do navegador apaga os projetos.</p>
 </section>
 </main>
@@ -125,9 +127,12 @@ nav button.on{color:var(--ac);font-weight:700}
     </div>
   </div>
 </div>
-<div id="exportando" hidden><p>Exportando o vídeo</p><b id="perc"></b><p>Leva o mesmo tempo do vídeo. Mantenha a tela aberta.</p><button id="pararExport">Cancelar</button></div>
+<div id="exportando" hidden><p>Exportando o vídeo</p><b id="perc"></b><p id="dica"></p><button id="pararExport">Cancelar</button></div>
 <input type="file" id="arquivo" accept="video/*" hidden>
 <script src="app.js"></script>
+<script src="desenho.js"></script>
+<script src="fundo.js"></script>
+<script src="online.js"></script>
 <script src="legendas.js"></script>
 </body>
 </html>

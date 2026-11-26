@@ -1,5 +1,12 @@
 /* Legendas: gerar, editar, estilizar e exportar */
-let proj, segs = [], urlVid, worker, relogioIA, salvarId;
+let proj, segs = [], urlVid, worker, abortar, rodada = 0, relogioIA, salvarId;
+// versões anteriores guardavam outros modelos; usa o padrão atual
+if (!['online', 'onnx-community/whisper-base'].includes(store.get('modelo', ''))) store.set('modelo', store.get('chave', '') ? 'online' : 'onnx-community/whisper-base');
+$('chave').value = store.get('chave', '');
+$('chave').oninput = () => {
+  const c = $('chave').value.trim(); store.set('chave', c);
+  $('modelo').value = c ? 'online' : 'onnx-community/whisper-base'; store.set('modelo', $('modelo').value);
+};
 const vid = $('lvideo'), over = $('lover');
 
 for (const id of ['modelo', 'cor', 'tam', 'posi', 'fundo']) {
@@ -18,7 +25,7 @@ $('arquivo').onchange = async () => {
   editar(item);
 };
 function editar(item) {
-  if (worker) encerrarIA('');
+  if ($('gerar').disabled) encerrarIA('');
   proj = item; segs = (item.segs || []).map(s => ({ ...s }));
   URL.revokeObjectURL(urlVid); urlVid = URL.createObjectURL(item.blob);
   vid.src = urlVid; $('status').textContent = ''; $('cancelarIA').hidden = true;
@@ -36,37 +43,11 @@ function tamanho(v) {
   return [Math.round(w * k / 2) * 2, Math.round(h * k / 2) * 2];
 }
 
-/* ---------- desenho (igual na prévia e na exportação) ---------- */
-function desenhar(ctx, t) {
-  const s = segs.find(s => t >= s.ini && t < s.fim);
-  if (!s || !s.txt.trim()) return;
-  const W = ctx.canvas.width, H = ctx.canvas.height;
-  const px = Math.round(Math.min(W, H) * $('tam').value / 100);
-  ctx.font = `800 ${px}px system-ui, sans-serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
-  const linhas = [];
-  let l = '';
-  for (const p of s.txt.trim().split(/\s+/)) {
-    const tenta = l ? l + ' ' + p : p;
-    if (l && ctx.measureText(tenta).width > W * .88) { linhas.push(l); l = p; } else l = tenta;
-  }
-  linhas.push(l);
-  const alt = px * 1.3, bloco = alt * linhas.length;
-  const centro = { baixo: H * .80, meio: H * .5, alto: H * .16 }[$('posi').value];
-  linhas.forEach((texto, i) => {
-    const y = centro - bloco / 2 + alt * (i + .5);
-    if ($('fundo').value === 'caixa') {
-      const w = Math.min(ctx.measureText(texto).width + px * .7, W);
-      ctx.fillStyle = 'rgba(0,0,0,.65)'; ctx.fillRect((W - w) / 2, y - alt / 2, w, alt + 1);
-    } else {
-      ctx.strokeStyle = '#000'; ctx.lineWidth = px * .22; ctx.strokeText(texto, W / 2, y, W * .96);
-    }
-    ctx.fillStyle = $('cor').value; ctx.fillText(texto, W / 2, y, W * .96);
-  });
-}
+/* ---------- desenho (desenho.js) ---------- */
+const estiloAtual = () => ({ cor: $('cor').value, tam: +$('tam').value, posi: $('posi').value, fundo: $('fundo').value });
 (function previa() {
   if (!$('editor').hidden) {
-    const c = over.getContext('2d'); c.clearRect(0, 0, over.width, over.height); desenhar(c, vid.currentTime);
+    const c = over.getContext('2d'); c.clearRect(0, 0, over.width, over.height); desenhar(c, vid.currentTime, segs, estiloAtual());
   }
   requestAnimationFrame(previa);
 })();
@@ -107,37 +88,52 @@ function dividir(chunks, total) {
   return out;
 }
 function encerrarIA(msg) {
-  clearInterval(relogioIA); worker?.terminate(); worker = null;
+  rodada++; clearInterval(relogioIA); worker?.terminate(); worker = null; abortar?.abort(); abortar = null;
+  manterVivo(false);
   $('gerar').disabled = false; $('cancelarIA').hidden = true; $('status').textContent = msg;
 }
 $('cancelarIA').onclick = () => encerrarIA('Geração cancelada.');
 $('gerar').onclick = async () => {
+  const modelo = $('modelo').value, online = modelo === 'online', chave = store.get('chave', '');
+  if (online && !chave) return alert('Para a alta precisão, cole sua chave gratuita da Groq em Config.');
   if (segs.length && !confirm('Substituir as legendas atuais?')) return;
-  const alvo = proj;
+  const alvo = proj, minha = ++rodada, vale = () => rodada === minha;
   $('gerar').disabled = true; $('cancelarIA').hidden = false; $('status').textContent = 'Lendo o áudio…';
+  pedirAviso(); manterVivo(true);
+  const concluir = (chunks, total) => {
+    segs = dividir(chunks, total); montar(); guardar();
+    const msg = segs.length ? `${segs.length} legendas criadas. Revise o texto.` : 'Nenhuma fala encontrada.';
+    encerrarIA(msg); avisar(msg);
+  };
+  const falhar = msg => { encerrarIA(msg); avisar(msg); };
   let audio;
-  worker?.terminate();
-  const w = worker = new Worker('worker.js', { type: 'module' });
   try { audio = await audio16k(alvo.blob); }
-  catch { if (worker === w) encerrarIA('Não consegui ler o áudio deste vídeo.'); return; }
-  if (worker !== w) return;
+  catch { if (vale()) falhar('Não consegui ler o áudio deste vídeo.'); return; }
+  if (!vale()) return;
   const total = audio.length / 16000;
+  if (online) {
+    abortar = new AbortController();
+    try {
+      const chunks = await transcreverOnline(audio, chave, abortar.signal,
+        (i, n) => $('status').textContent = `Transcrevendo online (parte ${i} de ${n})… Pode usar outros aplicativos.`);
+      if (vale()) concluir(chunks, total);
+    } catch (e) { if (vale()) falhar('Não deu certo: ' + e.message); }
+    return;
+  }
   $('status').textContent = 'Preparando… Na primeira vez é preciso internet para baixar o modelo.';
-  w.onerror = () => encerrarIA('Falha ao iniciar a transcrição. Confira a internet e tente de novo.');
+  const w = worker = new Worker('worker.js', { type: 'module' });
+  w.onerror = () => falhar('Falha ao iniciar a transcrição. Confira a internet e tente de novo.');
   w.onmessage = ({ data: d }) => {
+    if (!vale()) return;
     if (d.tipo === 'baixando') $('status').textContent = `Baixando o modelo (só na primeira vez): ${d.mb.toFixed(0)} MB`;
     else if (d.tipo === 'transcrevendo') {
       const t0 = Date.now();
-      const mostrar = () => $('status').textContent = `Transcrevendo no celular… ${Math.round((Date.now() - t0) / 1000)} s. Mantenha o app aberto.`;
+      const mostrar = () => $('status').textContent = `Transcrevendo no celular… ${Math.round((Date.now() - t0) / 1000)} s. Pode usar outros aplicativos, sem fechar este.`;
       mostrar(); relogioIA = setInterval(mostrar, 1000);
-    } else if (d.tipo === 'erro') encerrarIA('Não deu certo: ' + d.msg);
-    else if (d.tipo === 'pronto') {
-      if (proj !== alvo) return encerrarIA('');
-      segs = dividir(d.chunks, total); montar(); guardar();
-      encerrarIA(segs.length ? `${segs.length} legendas criadas. Revise o texto.` : 'Nenhuma fala encontrada.');
-    }
+    } else if (d.tipo === 'erro') falhar('Não deu certo: ' + d.msg);
+    else if (d.tipo === 'pronto') concluir(d.chunks, total);
   };
-  w.postMessage({ audio, modelo: $('modelo').value }, [audio.buffer]);
+  w.postMessage({ audio, modelo }, [audio.buffer]);
 };
 
 /* ---------- edição ---------- */
@@ -186,10 +182,35 @@ $('srt').onclick = () => {
   a.download = proj.titulo.replace(/[^\p{L}\p{N} _-]/gu, '') + '.srt'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 };
-let cancelarExport;
-$('exportar').onclick = async () => {
+let cancelarExport, naTela = false;
+async function salvarExportado(blob, ms, original) {
+  const item = { id: Date.now(), blob, ms, titulo: ('Legendado: ' + original.titulo).slice(0, 40) };
+  try { await db('readwrite', s => s.put(item)); go('projetos'); avisar('Vídeo legendado pronto.'); }
+  catch { baixar(item); alert('Sem espaço no app. O vídeo foi enviado para os downloads.'); }
+}
+$('exportar').onclick = () => {
   if (!segs.length) return alert('Gere ou adicione legendas primeiro.');
-  vid.pause();
+  vid.pause(); pedirAviso();
+  if (!self.VideoEncoder || !self.OffscreenCanvas) return exportarNaTela();
+  manterVivo(true);
+  const original = proj, w = new Worker('exportador.js', { type: 'module' });
+  const fim = () => { w.terminate(); manterVivo(false); $('exportando').hidden = true; cancelarExport = null; };
+  const alternativa = () => { fim(); exportarNaTela(); };
+  cancelarExport = fim; naTela = false;
+  $('exportando').hidden = false; $('perc').textContent = 'Preparando…';
+  $('dica').textContent = 'Pode usar outros aplicativos. Não feche o Meu Estúdio.';
+  w.onerror = alternativa;
+  w.onmessage = async ({ data: d }) => {
+    if (d.tipo === 'progresso') $('perc').textContent = Math.min(99, Math.round(d.p * 100)) + '%';
+    else if (d.tipo === 'erro') { console.warn(d.msg); alternativa(); }
+    else if (d.tipo === 'pronto') { fim(); await salvarExportado(d.blob, d.ms, original); }
+  };
+  w.postMessage({ blob: original.blob, segs, estilo: estiloAtual() });
+};
+// plano B para aparelhos sem suporte: grava em tempo real, com o app na tela
+async function exportarNaTela() {
+  if (document.hidden) { avisar('Abra o app para concluir a exportação.'); await new Promise(ok => document.addEventListener('visibilitychange', ok, { once: true })); }
+  naTela = true; $('dica').textContent = 'Modo compatível: mantenha o app na tela até terminar.';
   const v = document.createElement('video'), cv = document.createElement('canvas'), ac = new AudioContext();
   v.className = 'oculto'; v.playsInline = true; v.preload = 'auto'; v.src = urlVid; document.body.append(v);
   let rec, quadro, trava, cancelado = false;
@@ -208,7 +229,7 @@ $('exportar').onclick = async () => {
     const ctx = cv.getContext('2d');
     const total = () => Number.isFinite(v.duration) ? v.duration : proj.ms / 1000;
     const pintar = () => {
-      ctx.drawImage(v, 0, 0, cv.width, cv.height); desenhar(ctx, v.currentTime);
+      ctx.drawImage(v, 0, 0, cv.width, cv.height); desenhar(ctx, v.currentTime, segs, estiloAtual());
       $('perc').textContent = total() ? Math.min(99, Math.round(v.currentTime / total() * 100)) + '%' : Math.round(v.currentTime) + ' s';
       quadro = requestAnimationFrame(pintar);
     };
@@ -220,9 +241,7 @@ $('exportar').onclick = async () => {
     rec.onstop = async () => {
       const dur = v.currentTime * 1000, tipo = rec.mimeType; limpar();
       if (cancelado) return;
-      const item = { id: Date.now(), blob: new Blob(partes, { type: tipo }), ms: dur, titulo: ('Legendado: ' + proj.titulo).slice(0, 40) };
-      try { await db('readwrite', s => s.put(item)); go('projetos'); }
-      catch { baixar(item); alert('Sem espaço no app. O vídeo foi enviado para os downloads.'); }
+      await salvarExportado(new Blob(partes, { type: tipo }), dur, proj);
     };
     v.onended = () => rec.state !== 'inactive' && rec.stop();
     if (cancelado) return;
@@ -231,8 +250,8 @@ $('exportar').onclick = async () => {
   } catch (e) {
     cancelado = true; limpar(); alert('Não consegui exportar este vídeo. (' + (e?.name || 'erro') + ')');
   }
-};
+}
 $('pararExport').onclick = () => cancelarExport?.();
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && cancelarExport) { cancelarExport(); alert('Exportação interrompida: mantenha o app aberto até terminar.'); }
+  if (document.hidden && cancelarExport && naTela) { cancelarExport(); alert('Exportação interrompida: mantenha o app aberto até terminar.'); }
 });

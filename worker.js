@@ -13,8 +13,8 @@ onmessage = async ({ data: { audio, modelo } }) => {
         postMessage({ tipo: 'baixando', mb: Object.values(arquivos).reduce((s, a) => s + a[0], 0) / 1048576 });
       };
       const criar = dtype => pipeline('automatic-speech-recognition', modelo, { device: 'wasm', dtype, progress_callback });
-      try { asr = await criar('q8'); }
-      catch (e) { asr = await criar({ encoder_model: 'fp32', decoder_model_merged: 'q4' }); }
+      // combinação mais fiel; a compactação 'q8' produzia texto ruim
+      asr = await criar({ encoder_model: 'fp32', decoder_model_merged: 'q4' });
       atual = modelo;
     }
     postMessage({ tipo: 'transcrevendo' });
