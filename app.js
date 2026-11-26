@@ -22,6 +22,7 @@ async function db(mode, fn) {
 function go(id) {
   document.querySelectorAll('main section').forEach(s => s.hidden = s.id !== id);
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.go === id));
+  if (id !== 'editor') $('lvideo')?.pause();
   if (id === 'projetos') listar();
 }
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
@@ -36,6 +37,9 @@ function aplicar() {
   $('ptext').style.fontSize = $('size').value + 'px';
   $('prompter').classList.toggle('mirror', $('mirror').checked);
 }
+
+const tipoVideo = () => ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm']
+  .find(t => MediaRecorder.isTypeSupported(t));
 
 /* ---------- estúdio ---------- */
 let stream, recorder, chunks = [], facing = 'user', raf, last, pos = 0, ms = 0, state = 'idle', countId, lock;
@@ -100,8 +104,7 @@ $('rec').onclick = async () => {
   if (!stream) return;
   state = 'count'; $('virar').disabled = true; $('rec').textContent = 'Cancelar';
   await contar(+$('espera').value);
-  const tipo = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm']
-    .find(t => MediaRecorder.isTypeSupported(t));
+  const tipo = tipoVideo();
   chunks = [];
   recorder = new MediaRecorder(stream, { mimeType: tipo, videoBitsPerSecond: 8e6 });
   recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
@@ -133,7 +136,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* ---------- projetos ---------- */
-const nome = i => 'estudio-' + i.id + (i.blob.type.includes('mp4') ? '.mp4' : '.webm');
+const nome = i => 'estudio-' + i.id + (i.blob.type.includes('webm') ? '.webm' : i.blob.type.includes('quicktime') ? '.mov' : '.mp4');
 function baixar(i) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(i.blob); a.download = nome(i); a.click();
@@ -156,6 +159,7 @@ function card(i) {
   btn('Salvar', () => baixar(i), 'primary');
   const file = new File([i.blob], nome(i), { type: i.blob.type.split(';')[0] });
   if (navigator.canShare?.({ files: [file] })) btn('Compartilhar', () => navigator.share({ files: [file] }).catch(() => {}));
+  btn('Legendas', () => editar(i));
   btn('Apagar', async () => { if (confirm('Apagar este vídeo?')) { await db('readwrite', s => s.delete(i.id)); listar(); } });
   el.append(h, v, row); return el;
 }

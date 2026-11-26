@@ -42,6 +42,17 @@ nav button.on{color:var(--ac);font-weight:700}
 .ctrl label{margin:2px 0;font-size:13px;color:#fff}
 #rec{background:var(--rec);font-weight:700}
 #count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;font-weight:800;pointer-events:none}
+#palco{position:relative;width:100%;margin:0 auto 8px;aspect-ratio:9/16;background:#000}
+#palco video,#palco canvas{position:absolute;inset:0;width:100%;height:100%}
+#palco canvas{pointer-events:none}
+#status{margin:0 0 12px;color:var(--ac)}
+.seg input{background:#0b1215;color:var(--tx);border:0;border-radius:8px;padding:10px;font:inherit}
+.seg>input{width:100%;margin-bottom:8px}
+.tempos{display:flex;align-items:center;gap:6px;color:var(--mu)}
+.tempos input{width:72px}.tempos button{margin-left:auto;background:#0b1215}
+#exportando{position:fixed;inset:0;z-index:20;background:#0b1215;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;text-align:center;padding:24px}
+#exportando b{font-size:56px}
+.oculto{position:fixed;width:2px;height:2px;opacity:.01;left:0;top:0;pointer-events:none}
 </style>
 </head>
 <body>
@@ -52,7 +63,7 @@ nav button.on{color:var(--ac);font-weight:700}
   <div class="grid">
     <button id="soGravar">Gravar<small>sem texto</small></button>
     <button data-go="roteiro">Roteiro<small>escrever ou colar</small></button>
-    <button disabled>Legendas<small>em breve</small></button>
+    <button id="importar">Legendas<small>vídeo da galeria</small></button>
     <button disabled>Cortar vídeo<small>em breve</small></button>
   </div>
 </section>
@@ -60,6 +71,27 @@ nav button.on{color:var(--ac);font-weight:700}
   <h1>Roteiro</h1>
   <textarea id="script" placeholder="Escreva ou cole aqui o texto que vai ler."></textarea>
   <button class="primary big" id="abrir">Abrir câmera</button>
+</section>
+<section id="editor" hidden>
+  <h1>Legendas</h1>
+  <div id="palco"><video id="lvideo" controls playsinline controlslist="nofullscreen"></video><canvas id="lover"></canvas></div>
+  <label>Reconhecimento de fala<select id="modelo">
+    <option value="onnx-community/whisper-base">Equilibrado (recomendado)</option>
+    <option value="onnx-community/whisper-tiny">Rápido, erra mais</option>
+    <option value="onnx-community/whisper-small">Mais preciso, pesado e lento</option>
+  </select></label>
+  <button class="primary big" id="gerar">Gerar legendas automáticas</button>
+  <p id="status" role="status"></p>
+  <button id="cancelarIA" hidden>Cancelar</button>
+  <div class="grid">
+    <label>Cor<select id="cor"><option value="#ffffff">Branca</option><option value="#ffe600">Amarela</option><option value="#2dd4bf">Turquesa</option></select></label>
+    <label>Fundo<select id="fundo"><option value="caixa">Caixa escura</option><option value="contorno">Contorno</option></select></label>
+    <label>Posição<select id="posi"><option value="baixo">Embaixo</option><option value="meio">No meio</option><option value="alto">Em cima</option></select></label>
+    <label>Tamanho<input type="range" id="tam" min="3" max="11" step="0.5" value="6"></label>
+  </div>
+  <div id="segs"></div>
+  <div class="row"><button id="nova">+ Legenda</button><button id="srt">Baixar .srt</button></div>
+  <button class="primary big" id="exportar" style="margin-top:12px">Exportar vídeo com legendas</button>
 </section>
 <section id="projetos" hidden><h1>Projetos</h1><div id="list"></div></section>
 <section id="config" hidden>
@@ -93,6 +125,9 @@ nav button.on{color:var(--ac);font-weight:700}
     </div>
   </div>
 </div>
+<div id="exportando" hidden><p>Exportando o vídeo</p><b id="perc"></b><p>Leva o mesmo tempo do vídeo. Mantenha a tela aberta.</p><button id="pararExport">Cancelar</button></div>
+<input type="file" id="arquivo" accept="video/*" hidden>
 <script src="app.js"></script>
+<script src="legendas.js"></script>
 </body>
 </html>
