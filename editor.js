@@ -171,9 +171,9 @@
     const f = c.fundo || fundoPadrao();
     $('f-tipo').value = f.tipo; $('f-cor').value = f.cor; $('f-pronto').value = f.pronto;
     for (const k of ['forca', 'ajuste', 'borda']) $('f-' + k).value = f[k];
-    $('fo-cor').hidden = f.tipo !== 'cor'; $('fo-pronto').hidden = f.tipo !== 'pronto'; $('fo-foto').hidden = f.tipo !== 'foto'; $('fo-desfoque').hidden = f.tipo !== 'desfoque';
+    $('fo-cor').hidden = f.tipo !== 'cor'; $('fo-pronto').hidden = f.tipo !== 'pronto'; $('fo-desfoque').hidden = f.tipo !== 'desfoque';
     $('fo-ajustes').hidden = f.tipo === 'original';
-    $('efundofoto').textContent = f.midia ? 'Trocar a foto de fundo' : 'Escolher foto de fundo';
+    $('efundofoto').querySelector('span').textContent = f.midia ? 'Trocar o fundo da galeria' : 'Trazer fundo da galeria';
     mostrarLimite();
   }
   for (const k of ['tipo', 'cor', 'pronto', 'forca', 'ajuste', 'borda']) $('f-' + k).addEventListener('input', () => {
@@ -189,7 +189,7 @@
     if (comRecorte(c)) { falhaRecorte = false; ligarRecorte(); }
     if (achar(t).i !== sel) t = inicioDe(sel) + Math.min(.8, MONTAGEM.dur(c) / 2);
     noQuadro = -1; guardar(); montarFundo(c);
-    if (k === 'tipo' && v === 'foto' && !c.fundo.midia) aviso('Agora escolha a foto de fundo.');
+    if (k === 'tipo' && v === 'foto' && !c.fundo.midia) aviso('Agora toque em Trazer fundo da galeria.');
   });
   $('efundofoto').onclick = () => $('earqfundo').click();
   $('earqfundo').onchange = async () => {
