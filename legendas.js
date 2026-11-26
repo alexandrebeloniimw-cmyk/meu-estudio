@@ -212,13 +212,36 @@ $('srt').onclick = () => {
   a.download = proj.titulo.replace(/[^\p{L}\p{N} _-]/gu, '') + '.srt'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 };
-let cancelarExport, naTela = false;
-async function salvarExportado(blob, ms, original) {
-  const item = { id: Date.now(), blob, ms, titulo: ('Legendado: ' + original.titulo).slice(0, 40) };
-  try { await db('readwrite', s => s.put(item)); go('projetos'); avisar('Vídeo legendado pronto.'); }
-  catch { baixar(item); alert('Sem espaço no app. O vídeo foi enviado para os downloads.'); }
+let cancelarExport, naTela = false, pendente = null;
+const temLegendas = i => !!(i === proj ? segs.length : i.segs?.length);
+const assinatura = () => JSON.stringify([segs, estiloAtual()]);
+async function comLegendas(item, acao) {
+  if (item !== proj || $('editor').hidden) editar(item);
+  // se já existe uma versão idêntica pronta, não gera outra
+  const sig = assinatura();
+  const feito = (await db('readonly', s => s.getAll())).find(v => v.origem === item.id && v.assinatura === sig);
+  if (feito) return mostrarPronto(feito, acao);
+  iniciarExportacao(acao);
 }
-$('exportar').onclick = () => {
+function mostrarPronto(item, acao) {
+  go('pronto');
+  URL.revokeObjectURL($('pvideo').src); $('pvideo').src = URL.createObjectURL(item.blob);
+  $('psalvar').onclick = () => baixar(item);
+  $('pcompartilhar').onclick = () => compartilhar(item);
+  // compartilhar exige um toque novo; salvar pode ser automático com o app na tela
+  if (acao === 'salvar' && !document.hidden) baixar(item);
+  else if (acao === 'compartilhar') informar('Vídeo com legendas pronto. Toque em Compartilhar. (Toque para fechar)');
+}
+async function salvarExportado(blob, ms, original) {
+  const item = { id: Date.now(), blob, ms, origem: original.id, assinatura: assinatura(), titulo: ('Legendado: ' + original.titulo).slice(0, 40) };
+  try { await db('readwrite', s => s.put(item)); }
+  catch { informar('Sem espaço para guardar no app. Salve agora o vídeo pronto.'); }
+  avisar('Vídeo com legendas pronto. Toque para abrir.');
+  mostrarPronto(item, pendente);
+}
+$('exportar').onclick = () => segs.length ? comLegendas(proj) : alert('Gere ou adicione legendas primeiro.');
+function iniciarExportacao(acao) {
+  pendente = acao;
   if (!segs.length) return alert('Gere ou adicione legendas primeiro.');
   vid.pause(); pedirAviso();
   if (!self.VideoEncoder || !self.OffscreenCanvas) return exportarNaTela();
@@ -236,7 +259,7 @@ $('exportar').onclick = () => {
     else if (d.tipo === 'pronto') { fim(); await salvarExportado(d.blob, d.ms, original); }
   };
   w.postMessage({ blob: original.blob, segs, estilo: estiloAtual() });
-};
+}
 // plano B para aparelhos sem suporte: grava em tempo real, com o app na tela
 async function exportarNaTela() {
   if (document.hidden) { avisar('Abra o app para concluir a exportação.'); await new Promise(ok => document.addEventListener('visibilitychange', ok, { once: true })); }

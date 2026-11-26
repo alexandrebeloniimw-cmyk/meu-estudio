@@ -59,12 +59,14 @@ nav button.on{color:var(--ac);font-weight:700}
 .menu span{font-size:22px}
 .largo{width:100%;background:#22343c}
 .nota{color:var(--mu);font-size:13px}
+#pvideo{width:100%;max-height:48vh;background:#000;border-radius:12px;margin-bottom:12px}
+#aviso{position:fixed;left:12px;right:12px;bottom:84px;z-index:30;background:#eef6f5;color:#04211d;border-radius:14px;padding:14px;font-weight:600;white-space:pre-line;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
 <main>
 <section id="criar">
-  <h1>Meu Estúdio <small style="font-size:13px;color:var(--mu)">versão 6</small></h1>
+  <h1>Meu Estúdio <small style="font-size:13px;color:var(--mu)">versão 7</small></h1>
   <button class="primary big" data-go="roteiro">+ Gravar com teleprompter</button>
   <div class="grid">
     <button id="soGravar">Gravar<small>sem texto</small></button>
@@ -82,7 +84,7 @@ nav button.on{color:var(--ac);font-weight:700}
   <h1>Legendas</h1>
   <div id="palco"><video id="lvideo" controls playsinline controlslist="nofullscreen"></video><canvas id="lover"></canvas></div>
   <div id="menuEditor"></div>
-  <p class="nota">Este menu vale para o vídeo aberto, sem as legendas atuais. Para salvar com legendas, use "Exportar".</p>
+  <p class="nota">Quando houver legendas, Salvar e Compartilhar geram o vídeo já com elas.</p>
   <label>Reconhecimento de fala<select id="modelo">
     <option value="online">Alta precisão (online, precisa de chave)</option>
     <option value="onnx-community/whisper-base">No celular (offline, erra mais)</option>
@@ -99,6 +101,13 @@ nav button.on{color:var(--ac);font-weight:700}
   <div id="segs"></div>
   <div class="row"><button id="nova">+ Legenda</button><button id="srt">Baixar .srt</button></div>
   <button class="primary big" id="exportar" style="margin-top:12px">Exportar vídeo com legendas</button>
+</section>
+<section id="pronto" hidden>
+  <h1>Vídeo com legendas pronto ✅</h1>
+  <video id="pvideo" controls playsinline></video>
+  <button class="primary big" id="psalvar">💾 Salvar na galeria</button>
+  <button class="primary big" id="pcompartilhar">📤 Compartilhar</button>
+  <button class="largo" data-go="projetos">Ir para Projetos</button>
 </section>
 <section id="projetos" hidden><h1>Projetos</h1><div id="list"></div></section>
 <section id="config" hidden>
@@ -136,6 +145,7 @@ nav button.on{color:var(--ac);font-weight:700}
   </div>
 </div>
 <div id="exportando" hidden><p>Exportando o vídeo</p><b id="perc"></b><p id="dica"></p><button id="pararExport">Cancelar</button></div>
+<div id="aviso" role="status" hidden></div>
 <input type="file" id="arquivo" accept="video/*" hidden>
 <script src="app.js"></script>
 <script src="desenho.js"></script>
