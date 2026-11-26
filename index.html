@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1215">
+<title>Meu Estúdio</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#0b1215;--card:#152127;--ac:#2dd4bf;--tx:#eef6f5;--mu:#8ba3a6;--rec:#ef4444}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--tx);font:16px system-ui,sans-serif}
+main{padding:20px 16px 100px;max-width:600px;margin:auto}
+h1{font-size:24px;margin-bottom:16px}
+button,.btn{font:inherit;border:0;border-radius:14px;padding:12px 16px;background:var(--card);color:var(--tx);cursor:pointer}
+.primary{background:var(--ac);color:#04211d;font-weight:700}
+.big{width:100%;padding:28px;font-size:20px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid button{padding:20px 8px}
+.grid small{display:block;color:var(--mu);margin-top:4px}
+button:disabled{opacity:.45}
+textarea{width:100%;height:45vh;background:var(--card);color:var(--tx);border:0;border-radius:14px;padding:14px;font:18px/1.5 system-ui;margin-bottom:12px}
+label{display:block;margin:12px 0;color:var(--mu)}
+input[type=range]{width:100%;accent-color:var(--ac)}
+select{width:100%;padding:12px;border-radius:12px;background:var(--card);color:var(--tx);border:0;font:inherit;margin-top:6px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#111b20;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+nav button{flex:1;background:none;color:var(--mu)}
+nav button.on{color:var(--ac);font-weight:700}
+.item{background:var(--card);border-radius:14px;padding:12px;margin-bottom:12px}
+.item video{width:100%;max-height:50vh;border-radius:10px;background:#000;margin:8px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+#studio{position:fixed;inset:0;background:#000;z-index:10}
+#cam{width:100%;height:100%;object-fit:contain}
+#cam.front{transform:scaleX(-1)}
+#prompter{position:absolute;top:0;left:0;right:0;height:46%;overflow:hidden;background:rgba(0,0,0,.45)}
+#ptext{padding:30% 18px 60%;white-space:pre-wrap;text-align:center;font-weight:600;line-height:1.35;text-shadow:0 1px 4px #000}
+#prompter.mirror #ptext{transform:scaleX(-1)}
+.top{position:absolute;top:46%;left:0;right:0;text-align:center;padding:6px;font-variant-numeric:tabular-nums}
+.ctrl{position:absolute;bottom:0;left:0;right:0;padding:10px 12px calc(14px + env(safe-area-inset-bottom));background:rgba(0,0,0,.55)}
+.ctrl label{margin:2px 0;font-size:13px;color:#fff}
+#rec{background:var(--rec);font-weight:700}
+#count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;font-weight:800;pointer-events:none}
+</style>
+</head>
+<body>
+<main>
+<section id="criar">
+  <h1>Meu Estúdio</h1>
+  <button class="primary big" data-go="roteiro">+ Gravar com teleprompter</button>
+  <div class="grid">
+    <button id="soGravar">Gravar<small>sem texto</small></button>
+    <button data-go="roteiro">Roteiro<small>escrever ou colar</small></button>
+    <button disabled>Legendas<small>em breve</small></button>
+    <button disabled>Cortar vídeo<small>em breve</small></button>
+  </div>
+</section>
+<section id="roteiro" hidden>
+  <h1>Roteiro</h1>
+  <textarea id="script" placeholder="Escreva ou cole aqui o texto que vai ler."></textarea>
+  <button class="primary big" id="abrir">Abrir câmera</button>
+</section>
+<section id="projetos" hidden><h1>Projetos</h1><div id="list"></div></section>
+<section id="config" hidden>
+  <h1>Configurações</h1>
+  <label>Formato do vídeo<select id="formato"><option value="v">Vertical (Reels, Status)</option><option value="h">Horizontal (YouTube)</option></select></label>
+  <label>Contagem regressiva<select id="espera"><option value="3">3 segundos</option><option value="5">5 segundos</option><option value="0">Sem contagem</option></select></label>
+  <label><input type="checkbox" id="mirror"> Espelhar o texto (vidro de teleprompter)</label>
+  <p style="color:var(--mu)">Os vídeos ficam somente neste aparelho. Salve na galeria os que quiser guardar: limpar os dados do navegador apaga os projetos.</p>
+</section>
+</main>
+<nav>
+  <button data-go="criar" class="on">Criar</button>
+  <button data-go="projetos">Projetos</button>
+  <button data-go="config">Config.</button>
+</nav>
+<div id="studio" hidden>
+  <video id="cam" autoplay muted playsinline></video>
+  <div id="prompter"><div id="ptext"></div></div>
+  <div class="top" id="timer">00:00</div>
+  <div id="count"></div>
+  <div class="ctrl">
+    <div id="sliders">
+      <label>Velocidade<input type="range" id="speed" min="10" max="150" value="40"></label>
+      <label>Tamanho da letra<input type="range" id="size" min="18" max="56" value="30"></label>
+    </div>
+    <div class="row">
+      <button id="fechar">Voltar</button>
+      <button id="virar">Virar</button>
+      <button id="pausa" disabled>Pausar</button>
+      <button id="rec">● Gravar</button>
+    </div>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
