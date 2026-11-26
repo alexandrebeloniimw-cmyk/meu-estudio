@@ -1,8 +1,8 @@
 // rede primeiro (recebe atualizações); cache para usar sem internet
-const C = 'estudio-v4';
+const C = 'estudio-v5';
 const LIBS = 'https://cdn.jsdelivr.net/';
 const F = ['./', 'index.html', 'app.js', 'legendas.js', 'worker.js', 'desenho.js', 'fundo.js', 'online.js', 'exportador.js', 'vendor/mediabunny.min.mjs', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
-self.addEventListener('install', e => e.waitUntil(caches.open(C).then(c => c.addAll(F)).then(() => self.skipWaiting())));
+self.addEventListener('install', e => e.waitUntil(caches.open(C).then(c => c.addAll(F.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys()
   .then(k => Promise.all(k.filter(n => n.startsWith('estudio-') && n !== C).map(n => caches.delete(n))))
   .then(() => self.clients.claim())));
@@ -19,7 +19,7 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (!e.request.url.startsWith(self.registration.scope)) return;
-  e.respondWith(fetch(e.request).then(r => {
+  e.respondWith(fetch(e.request.url, { cache: 'no-cache' }).then(r => {
     if (r.ok) { const cp = r.clone(); caches.open(C).then(c => c.put(e.request, cp)); }
     return r;
   }).catch(() => caches.match(e.request, { ignoreSearch: true })));

@@ -59,7 +59,7 @@ nav button.on{color:var(--ac);font-weight:700}
 <body>
 <main>
 <section id="criar">
-  <h1>Meu Estúdio</h1>
+  <h1>Meu Estúdio <small style="font-size:13px;color:var(--mu)">versão 5</small></h1>
   <button class="primary big" data-go="roteiro">+ Gravar com teleprompter</button>
   <div class="grid">
     <button id="soGravar">Gravar<small>sem texto</small></button>
@@ -99,6 +99,7 @@ nav button.on{color:var(--ac);font-weight:700}
   <label>Formato do vídeo<select id="formato"><option value="v">Vertical (Reels, Status)</option><option value="h">Horizontal (YouTube)</option></select></label>
   <label>Contagem regressiva<select id="espera"><option value="3">3 segundos</option><option value="5">5 segundos</option><option value="0">Sem contagem</option></select></label>
   <label><input type="checkbox" id="mirror"> Espelhar o texto (vidro de teleprompter)</label>
+  <button id="atualizar" style="width:100%">Atualizar o app</button>
   <label>Chave da Groq (alta precisão nas legendas)<input type="password" id="chave" autocomplete="off" placeholder="gsk_..."></label>
   <p style="color:var(--mu);margin-bottom:16px">Crie a chave em <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--ac)">console.groq.com/keys</a>. Ela fica guardada só neste aparelho. Na alta precisão, o áudio do vídeo é enviado à Groq.</p>
   <p style="color:var(--mu)">Os vídeos ficam somente neste aparelho. Salve na galeria os que quiser guardar: limpar os dados do navegador apaga os projetos.</p>

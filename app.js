@@ -163,6 +163,11 @@ function card(i) {
   btn('Apagar', async () => { if (confirm('Apagar este vídeo?')) { await db('readwrite', s => s.delete(i.id)); listar(); } });
   el.append(h, v, row); return el;
 }
+$('atualizar').onclick = async () => {
+  if (!navigator.onLine) return alert('Conecte-se à internet para atualizar.');
+  try { await (await navigator.serviceWorker.getRegistration())?.update(); } catch {}
+  location.reload();
+};
 aplicar();
 navigator.storage?.persist?.();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
