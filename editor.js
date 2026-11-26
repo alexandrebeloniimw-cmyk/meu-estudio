@@ -134,6 +134,15 @@
   /* ---------- fundo (recorte da pessoa) ---------- */
   const fundoPadrao = () => ({ tipo: 'original', cor: '#12275a', pronto: 'estudio', forca: 40, ajuste: 50, borda: 30, midia: null });
   const comRecorte = c => c?.tipo === 'video' && c.fundo && c.fundo.tipo !== 'original';
+  const LIMITE = 60; // segundos de vídeo com troca de fundo em cada montagem
+  const usoRecorte = (clipes = proj.clipes) => clipes.filter(comRecorte).reduce((s, c) => s + MONTAGEM.dur(c), 0);
+  const passou = s => s > LIMITE + .05;
+  const msgLimite = s => `O limite para remover o fundo é de 1 minuto e este vídeo ficaria com ${seg(s)}. Apare ou divida o clipe.`;
+  function mostrarLimite() {
+    const s = usoRecorte();
+    $('flimite').textContent = `Limite de 1 minuto por montagem. Em uso: ${seg(s)}.` + (passou(s) ? ' Apare os clipes para poder gerar.' : '');
+    $('flimite').style.color = passou(s) ? 'var(--rec)' : '';
+  }
   let recortador, preparandoRecorte, chaveRecorte = '', mascara, falhaRecorte = false;
   async function fotoDeFundo(id) {
     const m = midias.get(id);
@@ -165,11 +174,17 @@
     $('fo-cor').hidden = f.tipo !== 'cor'; $('fo-pronto').hidden = f.tipo !== 'pronto'; $('fo-foto').hidden = f.tipo !== 'foto'; $('fo-desfoque').hidden = f.tipo !== 'desfoque';
     $('fo-ajustes').hidden = f.tipo === 'original';
     $('efundofoto').textContent = f.midia ? 'Trocar a foto de fundo' : 'Escolher foto de fundo';
+    mostrarLimite();
   }
   for (const k of ['tipo', 'cor', 'pronto', 'forca', 'ajuste', 'borda']) $('f-' + k).addEventListener('input', () => {
     const c = proj.clipes[sel]; if (!c) return;
     pausar();
     const v = $('f-' + k).value;
+    if (k === 'tipo' && v !== 'original' && !comRecorte(c)) {
+      const s = usoRecorte() + MONTAGEM.dur(c);
+      if (passou(s)) { montarFundo(c); return aviso(msgLimite(s)); }
+      aviso('');
+    }
     c.fundo = { ...(c.fundo || fundoPadrao()), [k]: ['forca', 'ajuste', 'borda'].includes(k) ? +v : v };
     if (comRecorte(c)) { falhaRecorte = false; ligarRecorte(); }
     if (achar(t).i !== sel) t = inicioDe(sel) + Math.min(.8, MONTAGEM.dur(c) / 2);
@@ -180,6 +195,8 @@
   $('earqfundo').onchange = async () => {
     const f = $('earqfundo').files[0], c = proj.clipes[sel]; $('earqfundo').value = '';
     if (!f || !c) return;
+    const novo = usoRecorte() + (comRecorte(c) ? 0 : MONTAGEM.dur(c));
+    if (!comRecorte(c) && passou(novo)) return aviso(msgLimite(novo));
     const midia = await novaMidia(f);
     await fotoDeFundo(midia);
     if (!midias.get(midia).img) return aviso('Não consegui abrir esta imagem. Use JPG ou PNG.');
@@ -188,8 +205,10 @@
   };
   $('efundotodos').onclick = () => {
     const f = proj.clipes[sel].fundo || fundoPadrao();
+    const s = f.tipo === 'original' ? 0 : proj.clipes.filter(x => x.tipo === 'video').reduce((s, x) => s + MONTAGEM.dur(x), 0);
+    if (passou(s)) return aviso(msgLimite(s));
     for (const x of proj.clipes) if (x.tipo === 'video') x.fundo = { ...f };
-    guardar(); aviso('Fundo aplicado a todos os vídeos.');
+    guardar(); mostrarLimite(); aviso('Fundo aplicado a todos os vídeos.');
   };
 
   /* ---------- prévia ---------- */
@@ -323,7 +342,7 @@
       else if (k === 'fim') { c.fim = Math.min(c.total, Math.max(v, c.ini + .2)); $('v-fim').textContent = seg(c.fim); t = inicioDe(sel) + MONTAGEM.dur(c) - .05; }
       else c[k] = v;
       if (k === 'transicao') { t = inicioDe(Math.max(0, sel)) - .5; noQuadro = -1; guardar(); montarClipes(); return tocar(); }
-      rotulos(c); guardar();
+      rotulos(c); guardar(); mostrarLimite();
       if (['ini', 'fim', 'dur', 'vel'].includes(k)) montarClipes();
     });
   }
@@ -473,8 +492,8 @@
     if (ocupado) return aviso('Aguarde terminar de adicionar os arquivos.');
     pausar();
     if (!self.VideoEncoder || !self.OffscreenCanvas) return aviso('Este navegador não consegue gerar o vídeo. Atualize o Chrome e tente de novo.');
-    const longos = proj.clipes.filter(comRecorte).reduce((s, c) => s + MONTAGEM.dur(c), 0);
-    if (longos > 300 && !confirm(`Há ${mm(longos)} de vídeo com troca de fundo. Pode demorar bastante e esquentar o celular. Continuar?`)) return;
+    const uso = usoRecorte();
+    if (passou(uso)) { informar(msgLimite(uso) + ' (Toque para fechar)'); return aviso(msgLimite(uso)); }
     let comeco = 0;
     const arquivos = {};
     for (const [id, m] of midias) arquivos[id] = m.blob;

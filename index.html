@@ -167,7 +167,7 @@ nav button.on{color:var(--marinho)}nav button.on .i{background:var(--nevoa)}
 <svg xmlns="http://www.w3.org/2000/svg" hidden><symbol id="i-editor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M3 15h18M9 4v5M15 15v5"/></symbol><symbol id="i-microfone" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></symbol><symbol id="i-inicio" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/></symbol><symbol id="i-pasta" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></symbol><symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10l5-3v10l-5-3"/></symbol><symbol id="i-legenda" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 11h4M14 11h3M7 15h7"/></symbol><symbol id="i-tesoura" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8 7.5L20 17M8 16.5L20 7"/></symbol><symbol id="i-salvar" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></symbol><symbol id="i-enviar" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/></symbol><symbol id="i-lixo" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 001 1h8a1 1 0 001-1l1-12M9 7V4h6v3"/></symbol><symbol id="i-voltar" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol><symbol id="i-seta" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol><symbol id="i-tocar" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></symbol><symbol id="i-pausar" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol><symbol id="i-inicio-aqui" viewBox="0 0 24 24"><path d="M5 5v14M20 12H9M13 8l-4 4 4 4"/></symbol><symbol id="i-fim-aqui" viewBox="0 0 24 24"><path d="M19 5v14M4 12h11M11 8l4 4-4 4"/></symbol><symbol id="i-desfazer" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5M4 12h10a6 6 0 016 6"/></symbol><symbol id="i-recomecar" viewBox="0 0 24 24"><path d="M5 12a7 7 0 107-7H7M10 2L7 5l3 3"/></symbol><symbol id="i-restaurar" viewBox="0 0 24 24"><path d="M5 12a7 7 0 107-7H7M10 2L7 5l3 3M9 12l2 2 4-4"/></symbol><symbol id="i-silencio" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 9l5 6M22 9l-5 6"/></symbol><symbol id="i-magica" viewBox="0 0 24 24"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2zM19 17v4M17 19h4"/></symbol><symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-virar" viewBox="0 0 24 24"><path d="M4 8a9 9 0 0115-2l1 2M20 4v4h-4M20 16a9 9 0 01-15 2l-1-2M4 20v-4h4"/></symbol></svg>
 <main>
 <section id="criar">
-  <header><img class="marca" src="icon-192.png" alt=""><h1>Meu Estúdio</h1><span class="versao">versão 13</span></header>
+  <header><img class="marca" src="icon-192.png" alt=""><h1>Meu Estúdio</h1><span class="versao">versão 14</span></header>
   <div class="palco-inicio">
     <div class="visor" aria-hidden="true"><div class="quadro"><b></b><i></i><i></i><i></i></div></div>
     <div class="seletor" role="group" aria-label="Formato do vídeo"><button data-formato="v"><span class="q"></span>Vertical</button><button data-formato="h"><span class="q h"></span>Horizontal</button></div>
@@ -277,20 +277,23 @@ nav button.on{color:var(--marinho)}nav button.on .i{background:var(--nevoa)}
       <div class="cartao" id="efoto"><h2>Foto</h2><label>Tempo na tela <output id="v-dur"></output><input type="range" id="c-dur" min="1" max="15" step="0.5"></label><label><input type="checkbox" id="c-movimento">Movimento de aproximação</label></div>
       <div class="cartao" id="esom"><h2>Velocidade e som</h2><label>Velocidade<select id="c-vel"><option value="0.5">0,5× (câmera lenta)</option><option value="0.75">0,75×</option><option value="1">Normal</option><option value="1.25">1,25×</option><option value="1.5">1,5×</option><option value="2">2× (acelerado)</option></select></label><label>Volume do clipe <output id="v-volume"></output><input type="range" id="c-volume" min="0" max="200" step="5"></label></div>
       <div class="cartao" id="efundo"><h2>Remover o fundo</h2>
+        <p class="nota" id="flimite" style="margin:-6px 0 12px"></p>
         <label>Fundo do vídeo<select id="f-tipo"><option value="original">Manter o original</option><option value="desfoque">Desfocar o ambiente</option><option value="cor">Cor lisa</option><option value="pronto">Fundo pronto</option><option value="foto">Minha foto</option></select></label>
         <div id="fo-cor"><label>Cor<input type="color" id="f-cor"></label></div>
         <div id="fo-pronto"><label>Modelo<select id="f-pronto"><option value="estudio">Estúdio azul</option><option value="claro">Claro</option><option value="quente">Luz quente</option><option value="palco">Palco</option><option value="luzes">Luzes desfocadas</option><option value="natureza">Verde suave</option></select></label></div>
         <div id="fo-desfoque"><label>Força do desfoque<input type="range" id="f-forca" min="0" max="100" step="5"></label></div>
         <div id="fo-foto" style="margin-bottom:12px"><button id="efundofoto" class="largo"></button></div>
         <div id="fo-ajustes"><label>Recorte (esquerda mostra mais, direita corta mais)<input type="range" id="f-ajuste" min="0" max="100" step="5"></label><label>Suavidade da borda<input type="range" id="f-borda" min="0" max="100" step="5"></label><button id="efundotodos" class="largo">Aplicar a todos os vídeos</button></div>
-        <details><summary>Como gravar para um recorte melhor</summary><ul>
-          <li>Luz forte e uniforme de frente; evite janela atrás de você.</li>
-          <li>Fique de 1 a 2 metros à frente de uma parede lisa.</li>
-          <li>Use roupa de cor diferente da parede; evite listras finas.</li>
-          <li>Prenda fios soltos de cabelo.</li>
-          <li>Celular parado em tripé, lente limpa, na altura dos olhos.</li>
-          <li>Enquadre da cintura para cima, uma pessoa só.</li>
-          <li>Gestos calmos, com as mãos sem passar rápido.</li>
+        <details open><summary>Como gravar para um recorte melhor</summary><ul>
+          <li><b>Luz:</b> forte e uniforme, de frente; nada de janela atrás.</li>
+          <li><b>Fundo:</b> parede lisa e fosca, a 1 ou 2 metros de você.</li>
+          <li><b>Roupa:</b> cor bem diferente da parede, sem listras finas.</li>
+          <li><b>Câmera:</b> a traseira, se puder, parada em tripé, lente limpa, na altura dos olhos.</li>
+          <li><b>Enquadramento:</b> uma pessoa, da cintura para cima.</li>
+          <li><b>Movimentos:</b> calmos; prenda fios soltos de cabelo.</li>
+          <li><b>Ajuste:</b> sobrou parede? Leve “Recorte” para a direita. Sumiu parte do corpo? Para a esquerda.</li>
+          <li><b>Foto de fundo:</b> nítida, no mesmo formato do vídeo e com luz parecida com a sua. Um leve desfoque na foto fica mais natural.</li>
+          <li><b>Teste:</b> comece com 15 segundos para ver o resultado e o tempo.</li>
         </ul></details>
       </div>
       <div class="cartao"><h2>Imagem</h2>
